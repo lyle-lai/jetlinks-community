@@ -11,6 +11,7 @@ import org.jetlinks.community.utils.TimeUtils;
 import org.jetlinks.supports.protocol.management.ProtocolSupportDefinition;
 import org.jetlinks.supports.protocol.management.jar.JarProtocolSupportLoader;
 import org.jetlinks.supports.protocol.management.jar.ProtocolClassLoader;
+import org.jetlinks.supports.protocol.validator.MethodDeniedClassVisitor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -59,12 +60,15 @@ public class AutoDownloadJarProtocolSupportLoader extends JarProtocolSupportLoad
 
     private final FileManager fileManager;
 
+    private final MethodDeniedClassVisitor classVisitor;
+
     public AutoDownloadJarProtocolSupportLoader(WebClient.Builder builder,
                                                 FileManager fileManager) {
         this.webClient = builder.build();
         this.fileManager = fileManager;
         tempPath = new File(System.getProperty("jetlinks.protocol.temp.path", "./data/protocols"));
         tempPath.mkdirs();
+        this.classVisitor = MethodDeniedClassVisitor.global();
     }
 
     @Override
@@ -88,7 +92,8 @@ public class AutoDownloadJarProtocolSupportLoader extends JarProtocolSupportLoad
 
     @Override
     public Mono<? extends ProtocolSupport> load(ProtocolSupportDefinition definition) {
-
+        // 解除对HL7或其他协议包校验时对System.exit的校验失败
+        classVisitor.removeDenied(System.class,"exit");
         //复制新的配置信息
         ProtocolSupportDefinition newDef = FastBeanCopier.copy(definition, new ProtocolSupportDefinition());
 

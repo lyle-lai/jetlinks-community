@@ -54,7 +54,7 @@
                             <artifactSet>
                                 <includes>
                                     <!--   添加需要打包在一起的第三方依赖信息  -->
-                                      <include>ca.uhn:*</include>
+                                      <include>ca.uhn.hapi:*</include>
                                 </includes>
                             </artifactSet>
                         </configuration>

@@ -2,36 +2,32 @@ package com.lyle;
 
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.v26.group.ORU_R01_OBSERVATION;
 import ca.uhn.hl7v2.model.v26.group.ORU_R01_ORDER_OBSERVATION;
 import ca.uhn.hl7v2.model.v26.group.ORU_R01_PATIENT_RESULT;
 import ca.uhn.hl7v2.model.v26.message.ACK;
 import ca.uhn.hl7v2.model.v26.message.ORU_R01;
+import ca.uhn.hl7v2.model.v26.segment.MSH;
 import ca.uhn.hl7v2.model.v26.segment.OBX;
 import ca.uhn.hl7v2.parser.PipeParser;
+import ca.uhn.hl7v2.validation.impl.ValidationContextFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import org.jetlinks.core.config.ConfigKey;
 import org.jetlinks.core.defaults.BlockingDeviceOperator;
-import org.jetlinks.core.message.DeviceMessage;
 import org.jetlinks.core.message.DeviceOnlineMessage;
 import org.jetlinks.core.message.codec.DefaultTransport;
 import org.jetlinks.core.message.codec.EncodedMessage;
 import org.jetlinks.core.message.codec.MessagePayloadType;
 import org.jetlinks.core.message.codec.SimpleEncodedMessage;
 import org.jetlinks.core.message.property.ReportPropertyMessage;
-import org.jetlinks.core.metadata.DataType;
-import org.jetlinks.core.metadata.DefaultConfigMetadata;
-import org.jetlinks.core.metadata.types.StringType;
 import org.jetlinks.core.monitor.logger.Logger;
 import org.jetlinks.core.spi.ServiceContext;
 import org.jetlinks.supports.protocol.blocking.BlockingDeviceMessageCodec;
 import org.jetlinks.supports.protocol.blocking.BlockingMessageDecodeContext;
 import org.jetlinks.supports.protocol.blocking.BlockingMessageEncodeContext;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -59,14 +55,27 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
         String hl7Str = null;
 
         try {
-            // 读取 HL7 报文内容（不影响 readerIndex）
-            hl7Str = payload.toString(payload.readerIndex(), payload.readableBytes(), StandardCharsets.UTF_8).trim();
+            // 读取 HL7 报文内容（不影响 readerIndex）,同时保留分隔符
+            hl7Str = payload.toString(payload.readerIndex(), payload.readableBytes(), StandardCharsets.UTF_8);
+
+            // 去掉起始符 0x0B，如果存在
+            if (!hl7Str.isEmpty() && hl7Str.charAt(0) == 0x0B) {
+                hl7Str = hl7Str.substring(1);
+            }
+
+            // 禁用 Validation（重要）
+            parser.setValidationContext(ValidationContextFactory.noValidation());
             Message message = parser.parse(hl7Str);
+
+            // 获取设备mac地址
+            Segment mshSegment = (Segment) message.get("MSH");
+            MSH msh = (MSH) mshSegment;
+            String deviceId = msh.getSendingApplication().getHd2_UniversalID().getValue();
 
             // 获取设备
             BlockingDeviceOperator device = context.getDevice();
             if (device == null || device.getDeviceId() == null) {
-                boolean success = handleLogin(context);
+                boolean success = handleLogin(context,deviceId);
                 if (!success) {
                     sendAck(context, message, false); // 发送 AE
                     return;
@@ -74,7 +83,7 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
             }
 
             // 设备上线且报文有效，解析属性
-            ReportPropertyMessage report = parsePayload(message, context, logger);
+            ReportPropertyMessage report = parsePayload(message, context, logger,deviceId);
             if (report != null) {
                 context.sendToPlatformLater(report);
             }
@@ -134,7 +143,7 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
     /// <param name="context"></param>
     /// <param name="logger"></param>
     /// <returns></returns>
-    private ReportPropertyMessage parsePayload(Message message, BlockingMessageDecodeContext context, Logger logger) throws HL7Exception {
+    private ReportPropertyMessage parsePayload(Message message, BlockingMessageDecodeContext context, Logger logger, String deviceId) throws HL7Exception {
         if (message instanceof ORU_R01) {
             ORU_R01 oruMessage = (ORU_R01) message;
             List<ORU_R01_PATIENT_RESULT> patientResults = oruMessage.getPATIENT_RESULTAll();
@@ -151,7 +160,7 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
                         // OBX-3: 观测项标识（参数名） -> obx.getObservationIdentifier().getIdentifier().getValue()
                         // OBX-5: 观测值（参数值） -> obx.getObservationValue(0).getData().toString()
                         String paramName = Optional.ofNullable(obx.getObservationIdentifier())
-                                                   .map(id -> id.getIdentifier().getValue())
+                                                   .map(id -> id.getIdentifier().getValue() + "_" + id.getCwe2_Text())
                                                    .orElse(null);
 
                         String paramValue = obx.getObservationValue().length > 0
@@ -166,7 +175,8 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
             }
 
             ReportPropertyMessage report = new ReportPropertyMessage();
-            report.setDeviceId(context.getDevice().getDeviceId());
+            // 设置设备id
+            report.setDeviceId(Optional.ofNullable(context.getDevice()).map(BlockingDeviceOperator::getDeviceId).orElse(deviceId));
             report.setProperties(properties);
 
             logger.info("HL7 解析成功, deviceId={}, properties={}", report.getDeviceId(), properties);
@@ -179,23 +189,31 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
     }
 
     //处理登录逻辑
-    private boolean handleLogin(BlockingMessageDecodeContext context) {
+    private boolean handleLogin(BlockingMessageDecodeContext context, String deviceId) throws HL7Exception {
         BlockingDeviceOperator device = context.getDevice();
         //可能是首次连接,没有识别到当前设备,需要进行认证等处理.
         if (device == null) {
-            String hostName = context.getSession().getClientAddress().get().getHostName();
-            logger(hostName).debug("设备登录");
-            device = context.getDevice(hostName);
+
+            device = context.getDevice(deviceId);
             if (device == null) {
-                logger(hostName).warn("设备不存在或未激活");
+                // 根据IP获取设备
+//                String hostName = context.getSession().getClientAddress().get().getHostName();
+//                logger(hostName).debug("设备登录");
+//                device = context.getDevice(hostName);
+//                if (device == null) {
+//                    logger(hostName).warn("设备不存在或未激活");
+//                    context.disconnectLater();
+//                    return false;
+//                }
                 context.disconnectLater();
                 return false;
             }
+            DeviceOnlineMessage onlineMessage = new DeviceOnlineMessage();
+            onlineMessage.setDeviceId(device.getDeviceId());
+            context.sendToPlatformNow(onlineMessage);
+
         }
 
-        DeviceOnlineMessage onlineMessage = new DeviceOnlineMessage();
-        onlineMessage.setDeviceId(device.getDeviceId());
-        context.sendToPlatformLater(onlineMessage);
         return true;
     }
 

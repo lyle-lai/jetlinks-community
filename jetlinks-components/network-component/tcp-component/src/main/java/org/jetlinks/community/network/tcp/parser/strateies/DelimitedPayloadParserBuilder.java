@@ -12,6 +12,9 @@ import java.util.function.Supplier;
 
 /**
  * 以分隔符读取数据包
+ * 在 Vert.x 中，使用 io.vertx.core.parsetools.RecordParser.newDelimited() 方法按分隔符拆包时，
+ * 默认不会保留分隔符（即，分隔符不会出现在处理后的 Buffer 中）。
+ * 如果你需要“保留分隔符”，需要手动处理，因为 RecordParser 的设计初衷是“按 delimiter 分割记录”。
  *
  * @author zhouhao
  * @since 1.0

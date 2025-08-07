@@ -40,7 +40,7 @@ spring:
       acquire-retry: 3
   reactor:
     debug-agent:
-      enabled: false
+      enabled: true
   elasticsearch:
     uris: 159.75.205.149:20012
     username: elastic
@@ -54,12 +54,12 @@ easyorm:
   dialect: mysql #数据库方言
 tdengine:
   enabled: true
-  database: jetlinks
+  database: medlink
   restful:
     endpoints:
       - http://159.75.205.149:20016/
     username: root
-    password: Sca@lyle111
+    password: Scalyle222
 elasticsearch:
   embedded:
     enabled: false # 为true时使用内嵌的elasticsearch,不建议在生产环境中使用

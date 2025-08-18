@@ -1,5 +1,9 @@
 package org.jetlinks.community.device.service;
 
+import org.hswebframework.ezorm.core.param.Term;
+import org.hswebframework.web.authorization.Authentication;
+import org.hswebframework.web.authorization.Dimension;
+
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -1068,5 +1072,72 @@ public class LocalDeviceInstanceService extends GenericReactiveCrudService<Devic
                 .getProtocol()
                 .flatMap(protocol -> operator.apply(protocol, gateway, childId.flatMap(registry::getDevice)))
             );
+    }
+
+    private Mono<QueryParamEntity> applyDeviceAssetAccess(QueryParamEntity param) {
+        return Authentication
+            .currentReactive()
+            .map(auth -> {
+                // ignore admin user
+                if ("admin".equals(auth.getUser().getUsername())) {
+                    return param;
+                }
+
+                // Check if the term is already present from the frontend
+                boolean termExists = param.getTerms()
+                                          .stream()
+                                          .anyMatch(term -> "dim-assets".equals(term.getTermType()));
+
+                if (termExists) {
+                    return param;
+                }
+
+                // Get all dimensions of the user
+                java.util.List<Dimension> dimensions = auth.getDimensions();
+
+                // We are interested in dimensions that can be related to assets, e.g., 'org'
+                java.util.List<java.util.Map<String, String>> targets = dimensions.stream()
+                    .map(dim -> {
+                        java.util.Map<String, String> target = new java.util.HashMap<>();
+                        target.put("type", dim.getType().getId());
+                        target.put("id", dim.getId());
+                        return target;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+
+                if (targets.isEmpty()) {
+                    // If the user has no relevant dimensions, they can't see any devices.
+                    // Add a condition that is always false.
+                    param.and("id", "isnull", "1");
+                    return param;
+                }
+
+                // Create the 'dim-assets' term
+                Term term = new Term();
+                term.setTermType("dim-assets");
+                term.setColumn("id");
+
+                java.util.Map<String, Object> termValue = new java.util.HashMap<>();
+                termValue.put("assetType", "device");
+                termValue.put("targets", targets);
+                term.setValue(termValue);
+
+                // Add the term to the query parameters
+                param.addTerm(term);
+                return param;
+            })
+            .defaultIfEmpty(param);
+    }
+
+    @Override
+    public Flux<DeviceInstanceEntity> query(QueryParamEntity param) {
+        return applyDeviceAssetAccess(param)
+            .flatMapMany(super::query);
+    }
+
+    @Override
+    public Mono<PagerResult<DeviceInstanceEntity>> queryPager(QueryParamEntity param) {
+        return applyDeviceAssetAccess(param)
+            .flatMap(super::queryPager);
     }
 }

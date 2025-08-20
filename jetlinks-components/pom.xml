@@ -28,7 +28,7 @@
         <module>protocol-component</module>
         <module>relation-component</module>
         <module>tdengine-component</module>
-        <module>assets-component</module>
+        <!--<module>assets-component</module>-->
     </modules>
 
     <artifactId>jetlinks-components</artifactId>

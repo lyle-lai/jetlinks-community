@@ -8,8 +8,13 @@ import org.hswebframework.web.crud.service.ReactiveCrudService;
 import org.hswebframework.web.crud.web.reactive.ReactiveServiceCrudController;
 import org.jetlinks.community.auth.service.OpenPlatformAppService;
 import org.jetlinks.community.auth.entity.OpenPlatformAppEntity;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/open-platform/application")
@@ -24,5 +29,23 @@ public class OpenPlatformAppController implements ReactiveServiceCrudController<
     @Override
     public ReactiveCrudService<OpenPlatformAppEntity, String> getService() {
         return service;
+    }
+
+    @PutMapping("/{appId}/_disable")
+    @Operation(summary = "禁用开放平台应用")
+    public Mono<Integer> disableApp(@PathVariable @Parameter(description = "应用ID") String appId) {
+        return service.createUpdate()
+            .set(OpenPlatformAppEntity::getStatus, (byte) 0)
+            .where(OpenPlatformAppEntity::getId, appId)
+            .execute();
+    }
+
+    @PutMapping("/{appId}/_enable")
+    @Operation(summary = "启用开放平台应用")
+    public Mono<Integer> enableApp(@PathVariable @Parameter(description = "应用ID") String appId) {
+        return service.createUpdate()
+            .set(OpenPlatformAppEntity::getStatus, (byte) 1)
+            .where(OpenPlatformAppEntity::getId, appId)
+            .execute();
     }
 }

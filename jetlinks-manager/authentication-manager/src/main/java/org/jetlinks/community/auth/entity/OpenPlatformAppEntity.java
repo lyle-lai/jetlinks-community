@@ -1,13 +1,17 @@
 package org.jetlinks.community.auth.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import org.hswebframework.ezorm.rdb.mapping.annotation.ColumnType;
 import org.hswebframework.ezorm.rdb.mapping.annotation.Comment;
+import org.hswebframework.ezorm.rdb.mapping.annotation.JsonCodec;
 import org.hswebframework.web.api.crud.entity.GenericEntity;
+
 import javax.persistence.Column;
 import javax.persistence.Table;
 import java.sql.JDBCType;
+import java.util.List;
 
 @Getter
 @Setter
@@ -30,6 +34,24 @@ public class OpenPlatformAppEntity extends GenericEntity<String> {
     @Column(length = 256, nullable = false)
     @Comment("应用名称")
     private String name;
+
+    @Column(length = 256)
+    @Comment("归属单位")
+    private String ownerName;
+
+    @Column(length = 256)
+    @Comment("联系人")
+    private String contactPerson;
+
+    @Column(length = 256)
+    @Comment("回调地址")
+    private String callbackUrl;
+
+    @Column
+    @ColumnType(jdbcType = JDBCType.LONGVARCHAR, javaType = String.class) // 数据库存储为长文本，如JSON字符串
+    @JsonCodec // 使用hswebframework的JSON编解码器进行序列化和反序列化
+    @Comment("授权类型列表")
+    private List<String> authorizationTypes; // 新增字段，存储授权类型列表
 
     @Column
     @ColumnType(jdbcType = JDBCType.CLOB)

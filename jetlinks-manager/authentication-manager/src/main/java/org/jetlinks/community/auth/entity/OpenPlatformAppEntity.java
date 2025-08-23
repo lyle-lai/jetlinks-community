@@ -1,12 +1,12 @@
 package org.jetlinks.community.auth.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import org.hswebframework.ezorm.rdb.mapping.annotation.ColumnType;
 import org.hswebframework.ezorm.rdb.mapping.annotation.Comment;
 import org.hswebframework.ezorm.rdb.mapping.annotation.JsonCodec;
 import org.hswebframework.web.api.crud.entity.GenericEntity;
+import org.hswebframework.web.api.crud.entity.RecordCreationEntity;
 
 import javax.persistence.Column;
 import javax.persistence.Table;
@@ -17,7 +17,7 @@ import java.util.List;
 @Setter
 @Table(name = "s_open_platform_app")
 @Comment("开放平台应用信息表")
-public class OpenPlatformAppEntity extends GenericEntity<String> {
+public class OpenPlatformAppEntity extends GenericEntity<String> implements RecordCreationEntity {
 
     @Column(length = 64, nullable = false, updatable = false)
     @Comment("应用ID (AppId)")

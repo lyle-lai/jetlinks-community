@@ -10,6 +10,7 @@ import org.hswebframework.web.api.crud.entity.RecordCreationEntity;
 
 import javax.persistence.Column;
 import javax.persistence.Table;
+import java.io.Serializable;
 import java.sql.JDBCType;
 import java.util.List;
 
@@ -17,7 +18,7 @@ import java.util.List;
 @Setter
 @Table(name = "s_open_platform_app")
 @Comment("开放平台应用信息表")
-public class OpenPlatformAppEntity extends GenericEntity<String> implements RecordCreationEntity {
+public class OpenPlatformAppEntity extends GenericEntity<String> implements RecordCreationEntity, Serializable {
 
     @Column(length = 64, nullable = false, updatable = false)
     @Comment("应用ID (AppId)")

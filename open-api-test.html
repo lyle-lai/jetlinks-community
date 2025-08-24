@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Open API Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { padding: 10px 15px; cursor: pointer; }
+        pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Open API Test Client</h1>
+
+    <div class="form-group">
+        <label for="apiUrl">API URL</label>
+        <input type="text" id="apiUrl" value="http://localhost:8848/open-api/v1/test">
+    </div>
+
+    <div class="form-group">
+        <label for="appId">App ID</label>
+        <input type="text" id="appId" placeholder="Enter App ID">
+    </div>
+
+    <div class="form-group">
+        <label for="appKey">App Key</label>
+        <input type="text" id="appKey" placeholder="Enter App Key">
+    </div>
+
+    <div class="form-group">
+        <label for="appSecret">App Secret</label>
+        <input type="text" id="appSecret" placeholder="Enter App Secret">
+    </div>
+
+    <button onclick="sendRequest()">Send Request</button>
+
+    <h2>Request Details</h2>
+    <pre id="requestDetails"></pre>
+
+    <h2>Response</h2>
+    <pre id="response"></pre>
+</div>
+
+<script>
+    async function sendRequest() {
+        const apiUrl = document.getElementById('apiUrl').value;
+        const appId = document.getElementById('appId').value;
+        const appKey = document.getElementById('appKey').value;
+        const appSecret = document.getElementById('appSecret').value;
+        const responseEl = document.getElementById('response');
+        const requestDetailsEl = document.getElementById('requestDetails');
+
+        responseEl.textContent = 'Sending...';
+        requestDetailsEl.textContent = '';
+
+        if (!apiUrl || !appId || !appKey || !appSecret) {
+            responseEl.textContent = 'Error: Please fill in all fields.';
+            return;
+        }
+
+        try {
+            const timestamp = Math.floor(Date.now() / 1000).toString();
+            const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            
+            const url = new URL(apiUrl);
+            const path = url.pathname;
+            const queryString = url.search ? url.search.substring(1) : ''; // Assuming query params are already sorted if they exist. For this test, we assume none.
+
+            const stringToSign = appKey + timestamp + nonce + path + (queryString ? '?' + queryString : '');
+
+            const signature = await hmacSha256(appSecret, stringToSign);
+
+            const headers = {
+                'X-App-Id': appId,
+                'X-App-Key': appKey,
+                'X-Timestamp': timestamp,
+                'X-Nonce': nonce,
+                'X-Signature': signature
+            };
+
+            requestDetailsEl.textContent = `URL: ${apiUrl}\n` + 
+                                           `Method: GET\n` + 
+                                           `Headers:\n${JSON.stringify(headers, null, 2)}\n\n` + 
+                                           `StringToSign: ${stringToSign}`;
+
+            const res = await fetch(apiUrl, {
+                method: 'GET',
+                headers: headers
+            });
+
+            const responseData = await res.json();
+            responseEl.textContent = `Status: ${res.status}\n\n${JSON.stringify(responseData, null, 2)}`;
+
+        } catch (error) {
+            console.error('Error:', error);
+            responseEl.textContent = `Error: ${error.message}`;
+        }
+    }
+
+    async function hmacSha256(secret, message) {
+        const encoder = new TextEncoder();
+        const key = await window.crypto.subtle.importKey(
+            'raw',
+            encoder.encode(secret),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['sign']
+        );
+        const signature = await window.crypto.subtle.sign('HMAC', key, encoder.encode(message));
+        return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+</script>
+
+</body>
+</html>

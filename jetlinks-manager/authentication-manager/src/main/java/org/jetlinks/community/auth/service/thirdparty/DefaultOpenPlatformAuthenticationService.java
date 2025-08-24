@@ -60,11 +60,12 @@ public class DefaultOpenPlatformAuthenticationService implements OpenPlatformAut
         String nonce = request.getHeaders().getFirst("X-Nonce");
         String signature = request.getHeaders().getFirst("X-Signature");
 
+        // 检查是否存在第三方平台认证所需的请求头，如果不存在，则这不是一个第三方平台请求，直接返回Mono.empty()
         if (StringUtils.isAnyBlank(appId, appKey, timestamp, nonce, signature)) {
             return Mono.empty(); // Not an open platform request, fall through
         }
 
-        // 1. Validate timestamp
+        // 1. 验证时间戳
         try {
             long requestTimestamp = Long.parseLong(timestamp);
             if (Math.abs(System.currentTimeMillis() / 1000 - requestTimestamp) > TIMESTAMP_EXPIRE_SECONDS) {
@@ -74,7 +75,7 @@ public class DefaultOpenPlatformAuthenticationService implements OpenPlatformAut
             return Mono.error(new AuthenticationException("illegal_timestamp_format", "error.illegal_timestamp_format"));
         }
 
-        // 2. Validate nonce
+        // 2. 验证nonce，防止重放攻击
         String nonceKey = "nonce:" + nonce;
         Mono<Boolean> nonceCheck = redis.opsForValue()
             .setIfAbsent(nonceKey, "1", Duration.ofSeconds(TIMESTAMP_EXPIRE_SECONDS));
@@ -85,7 +86,7 @@ public class DefaultOpenPlatformAuthenticationService implements OpenPlatformAut
             .then(appService.createQuery().where(OpenPlatformAppEntity::getAppId, appId).fetchOne())
             .switchIfEmpty(Mono.error(new AuthenticationException("app_id_not_found", "error.app_id_not_found")))
             .flatMap(app -> {
-                // 3. Validate App status and key
+                // 3. 验证App状态和Key
                 if (app.getStatus() != 1) {
                     return Mono.error(new AuthenticationException("app_disabled", "error.app_disabled"));
                 }
@@ -93,19 +94,7 @@ public class DefaultOpenPlatformAuthenticationService implements OpenPlatformAut
                     return Mono.error(new AuthenticationException("invalid_app_key", "error.invalid_app_key"));
                 }
 
-                // 4. Validate signature
-                try {
-                    String stringToSign = createSignString(appKey, timestamp, nonce, request);
-                    String calculatedSignature = calculateSignature(stringToSign, app.getAppSecret());
-                    if (!signature.equals(calculatedSignature)) {
-                        return Mono.error(new AuthenticationException("invalid_signature", "error.invalid_signature"));
-                    }
-                } catch (Exception e) {
-                    log.error("Signature calculation failed", e);
-                    return Mono.error(new AuthenticationException("signature_calculation_failed", "error.signature_calculation_failed"));
-                }
-
-                // 5. Check API permission
+                // 4. 查找匹配的API配置
                 return apiConfigService.getApiConfigsByAppId(app.getId())
                     .filter(apiConfig -> {
                         boolean methodMatch = apiConfig.getRequestMethod().equalsIgnoreCase("ALL") ||
@@ -115,7 +104,29 @@ public class DefaultOpenPlatformAuthenticationService implements OpenPlatformAut
                     })
                     .next()
                     .switchIfEmpty(Mono.error(new AuthenticationException("api_access_denied", "error.api_access_denied")))
-                    .flatMap(apiConfig -> buildAuthentication(app));
+                    .flatMap(apiConfig -> {
+                        // 5. 根据配置决定是否验证签名
+                        // @DefaultValue("true")注解保证了该值不为null，除非数据库中明确存了null
+                        if (Boolean.FALSE.equals(apiConfig.getSignatureVerificationEnabled())) {
+                            // 如果禁用了签名验证，直接构建认证信息
+                            return buildAuthentication(app);
+                        }
+
+                        // 6. 执行签名验证
+                        try {
+                            String stringToSign = createSignString(appKey, timestamp, nonce, request);
+                            String calculatedSignature = calculateSignature(stringToSign, app.getAppSecret());
+                            if (!signature.equals(calculatedSignature)) {
+                                return Mono.error(new AuthenticationException("invalid_signature", "error.invalid_signature"));
+                            }
+                        } catch (Exception e) {
+                            log.error("Signature calculation failed", e);
+                            return Mono.error(new AuthenticationException("signature_calculation_failed", "error.signature_calculation_failed"));
+                        }
+
+                        // 签名验证成功，构建认证信息
+                        return buildAuthentication(app);
+                    });
             });
     }
 

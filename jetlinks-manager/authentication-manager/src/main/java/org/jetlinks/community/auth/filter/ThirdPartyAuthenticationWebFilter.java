@@ -2,6 +2,7 @@ package org.jetlinks.community.auth.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hswebframework.web.authorization.Authentication;
 import org.hswebframework.web.authorization.exception.AuthenticationException;
 import org.jetlinks.community.auth.service.thirdparty.OpenPlatformAuthenticationService;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 
+@Slf4j
 @Component
 @Order(-100) // Run before hsweb's default authentication filter
 @AllArgsConstructor
@@ -40,6 +42,7 @@ public class ThirdPartyAuthenticationWebFilter implements WebFilter {
                 response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
                 String errorBody = "{\"code\":\"" + e.getCode() + "\",\"message\":\"" + e.getI18nCode() + "\",\"status\":401}";
+                log.error("ThirdPartyAuthenticationWebFilter error: {}", errorBody, e);
                 byte[] bytes = errorBody.getBytes(StandardCharsets.UTF_8);
 
                 response.getHeaders().setContentLength(bytes.length);

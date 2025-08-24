@@ -6,11 +6,10 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.hswebframework.web.authorization.Authentication;
 import org.hswebframework.web.authorization.Dimension;
-import org.hswebframework.web.authorization.DimensionType;
 import org.hswebframework.web.authorization.User;
+import org.hswebframework.web.authorization.exception.AuthenticationException;
 import org.hswebframework.web.authorization.simple.SimpleDimension;
 import org.hswebframework.web.authorization.simple.SimpleUser;
-import org.hswebframework.web.exception.BusinessException;
 import org.jetlinks.community.auth.dimension.OpenPlatformDimensionType;
 import org.jetlinks.community.auth.entity.OpenPlatformApiConfigEntity;
 import org.jetlinks.community.auth.entity.OpenPlatformAppDeviceAuthEntity;
@@ -69,10 +68,10 @@ public class DefaultOpenPlatformAuthenticationService implements OpenPlatformAut
         try {
             long requestTimestamp = Long.parseLong(timestamp);
             if (Math.abs(System.currentTimeMillis() / 1000 - requestTimestamp) > TIMESTAMP_EXPIRE_SECONDS) {
-                return Mono.error(new BusinessException("error.request_timestamp_expired"));
+                return Mono.error(new AuthenticationException("request_timestamp_expired", "error.request_timestamp_expired"));
             }
         } catch (NumberFormatException e) {
-            return Mono.error(new BusinessException("error.illegal_timestamp_format"));
+            return Mono.error(new AuthenticationException("illegal_timestamp_format", "error.illegal_timestamp_format"));
         }
 
         // 2. Validate nonce
@@ -82,16 +81,16 @@ public class DefaultOpenPlatformAuthenticationService implements OpenPlatformAut
 
         return nonceCheck
             .filter(Boolean::booleanValue)
-            .switchIfEmpty(Mono.error(new BusinessException("error.nonce_replayed")))
+            .switchIfEmpty(Mono.error(new AuthenticationException("nonce_replayed", "error.nonce_replayed")))
             .then(appService.createQuery().where(OpenPlatformAppEntity::getAppId, appId).fetchOne())
-            .switchIfEmpty(Mono.error(new BusinessException("error.app_id_not_found")))
+            .switchIfEmpty(Mono.error(new AuthenticationException("app_id_not_found", "error.app_id_not_found")))
             .flatMap(app -> {
                 // 3. Validate App status and key
                 if (app.getStatus() != 1) {
-                    return Mono.error(new BusinessException("error.app_disabled"));
+                    return Mono.error(new AuthenticationException("app_disabled", "error.app_disabled"));
                 }
                 if (!app.getAppKey().equals(appKey)) {
-                    return Mono.error(new BusinessException("error.invalid_app_key"));
+                    return Mono.error(new AuthenticationException("invalid_app_key", "error.invalid_app_key"));
                 }
 
                 // 4. Validate signature
@@ -99,11 +98,11 @@ public class DefaultOpenPlatformAuthenticationService implements OpenPlatformAut
                     String stringToSign = createSignString(appKey, timestamp, nonce, request);
                     String calculatedSignature = calculateSignature(stringToSign, app.getAppSecret());
                     if (!signature.equals(calculatedSignature)) {
-                        return Mono.error(new BusinessException("error.invalid_signature"));
+                        return Mono.error(new AuthenticationException("invalid_signature", "error.invalid_signature"));
                     }
                 } catch (Exception e) {
                     log.error("Signature calculation failed", e);
-                    return Mono.error(new BusinessException("error.signature_calculation_failed"));
+                    return Mono.error(new AuthenticationException("signature_calculation_failed", "error.signature_calculation_failed"));
                 }
 
                 // 5. Check API permission
@@ -115,7 +114,7 @@ public class DefaultOpenPlatformAuthenticationService implements OpenPlatformAut
                         return methodMatch && pathMatch;
                     })
                     .next()
-                    .switchIfEmpty(Mono.error(new BusinessException("error.api_access_denied")))
+                    .switchIfEmpty(Mono.error(new AuthenticationException("api_access_denied", "error.api_access_denied")))
                     .flatMap(apiConfig -> buildAuthentication(app));
             });
     }

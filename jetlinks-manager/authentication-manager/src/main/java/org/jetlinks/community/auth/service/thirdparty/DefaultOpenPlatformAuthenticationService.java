@@ -104,30 +104,95 @@ public class DefaultOpenPlatformAuthenticationService implements OpenPlatformAut
                     })
                     .next()
                     .switchIfEmpty(Mono.error(new AuthenticationException("api_access_denied", "error.api_access_denied")))
-                    .flatMap(apiConfig -> {
-                        // 5. 根据配置决定是否验证签名
-                        // @DefaultValue("true")注解保证了该值不为null，除非数据库中明确存了null
-                        if (Boolean.FALSE.equals(apiConfig.getSignatureVerificationEnabled())) {
-                            // 如果禁用了签名验证，直接构建认证信息
-                            return buildAuthentication(app);
-                        }
+                    .flatMap(apiConfig ->
+                        // 5. 检查速率限制
+                        checkRateLimit(app.getId(), apiConfig)
+                            .then(Mono.defer(() -> {
+                                // 6. 根据配置决定是否验证签名
+                                if (Boolean.FALSE.equals(apiConfig.getSignatureVerificationEnabled())) {
+                                    // 如果禁用了签名验证，直接构建认证信息
+                                    return buildAuthentication(app);
+                                }
 
-                        // 6. 执行签名验证
-                        try {
-                            String stringToSign = createSignString(appKey, timestamp, nonce, request);
-                            String calculatedSignature = calculateSignature(stringToSign, app.getAppSecret());
-                            if (!signature.equals(calculatedSignature)) {
-                                return Mono.error(new AuthenticationException("invalid_signature", "error.invalid_signature"));
-                            }
-                        } catch (Exception e) {
-                            log.error("Signature calculation failed", e);
-                            return Mono.error(new AuthenticationException("signature_calculation_failed", "error.signature_calculation_failed"));
-                        }
+                                // 7. 执行签名验证
+                                try {
+                                    String stringToSign = createSignString(appKey, timestamp, nonce, request);
+                                    String calculatedSignature = calculateSignature(stringToSign, app.getAppSecret());
+                                    if (!signature.equals(calculatedSignature)) {
+                                        return Mono.error(new AuthenticationException("invalid_signature", "error.invalid_signature"));
+                                    }
+                                } catch (Exception e) {
+                                    log.error("Signature calculation failed", e);
+                                    return Mono.error(new AuthenticationException("signature_calculation_failed", "error.signature_calculation_failed"));
+                                }
 
-                        // 签名验证成功，构建认证信息
-                        return buildAuthentication(app);
-                    });
+                                // 签名验证成功，构建认证信息
+                                return buildAuthentication(app);
+                            }))
+                    );
             });
+    }
+
+    private Mono<Void> checkRateLimit(String appId, OpenPlatformApiConfigEntity apiConfig) {
+        String rateLimit = apiConfig.getRateLimit();
+        if (!StringUtils.isNotEmpty(rateLimit)) {
+            return Mono.empty();
+        }
+
+        String[] parts = rateLimit.split("/");
+        if (parts.length != 2) {
+            log.warn("Invalid rate limit format for app {}: {}", appId, rateLimit);
+            return Mono.empty(); // Or throw an error for misconfiguration
+        }
+
+        try {
+            long limit = Long.parseLong(parts[0]);
+            if (limit <= 0) {
+                return Mono.empty();
+            }
+            char unit = parts[1].toLowerCase().charAt(0);
+            long durationSeconds;
+
+            switch (unit) {
+                case 's':
+                    durationSeconds = 1;
+                    break;
+                case 'm':
+                    durationSeconds = 60;
+                    break;
+                case 'h':
+                    durationSeconds = 3600;
+                    break;
+                case 'd':
+                    durationSeconds = 86400;
+                    break;
+                default:
+                    log.warn("Invalid rate limit time unit for app {}: {}", appId, unit);
+                    return Mono.empty();
+            }
+
+            String redisKey = "rate-limit:" + appId + ":" + apiConfig.getApiPath() + ":" + apiConfig.getRequestMethod();
+
+            return redis.opsForValue()
+                .increment(redisKey)
+                .flatMap(count -> {
+                    if (count == 1) {
+                        return redis.expire(redisKey, Duration.ofSeconds(durationSeconds)).thenReturn(count);
+                    }
+                    return Mono.just(count);
+                })
+                .handle((count, sink) -> {
+                    if (count > limit) {
+                        sink.error(new AuthenticationException("rate_limit_exceeded", "error.rate_limit_exceeded"));
+                    } else {
+                        sink.complete();
+                    }
+                });
+
+        } catch (NumberFormatException e) {
+            log.warn("Invalid rate limit number format for app {}: {}", appId, rateLimit);
+            return Mono.empty();
+        }
     }
 
     private String createSignString(String appKey, String timestamp, String nonce, ServerHttpRequest request) {

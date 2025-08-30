@@ -5,9 +5,9 @@ import org.hswebframework.ezorm.rdb.metadata.RDBColumnMetadata;
 import org.hswebframework.ezorm.rdb.operator.builder.fragments.PrepareSqlFragments;
 import org.hswebframework.ezorm.rdb.operator.builder.fragments.SqlFragments;
 import org.hswebframework.ezorm.rdb.operator.builder.fragments.term.AbstractTermFragmentBuilder;
+import org.hswebframework.ezorm.rdb.utils.SqlUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -25,58 +25,42 @@ public class DimensionAssetTermBuilder extends AbstractTermFragmentBuilder {
     public SqlFragments createFragments(String columnFullName, RDBColumnMetadata column, Term term) {
         PrepareSqlFragments fragments = PrepareSqlFragments.of();
 
-        Object value = term.getValue();
-        if (value == null) {
-            return fragments;
-        }
-
-        Map<String, Object> valueAsMap;
-        if (value instanceof Map) {
-            valueAsMap = (Map<String, Object>) value;
-        } else {
-            return fragments;
+        Map<String, Object> valueAsMap = (Map<String, Object>) term.getValue();
+        if (valueAsMap == null) {
+            return fragments.addSql("1=2");
         }
 
         String assetType = (String) valueAsMap.get("assetType");
-        // Currently we only support device assets with this builder
         if (!"device".equals(assetType)) {
-            return fragments;
+            return fragments.addSql("1=2");
         }
 
-        List<Map<String, String>> targets = (List<Map<String, String>>) valueAsMap.get("targets");
+        List<Map<String, Object>> targets = (List<Map<String, Object>>) valueAsMap.get("targets");
         if (CollectionUtils.isEmpty(targets)) {
-            return fragments;
+            return fragments.addSql("1=2");
         }
 
-        // Filter by targets
-        List<Map<String, String>> validTargets = targets.stream()
-            .filter(t -> StringUtils.hasText(t.get("type")) && StringUtils.hasText(t.get("id")))
-            .collect(Collectors.toList());
-
-        if (CollectionUtils.isEmpty(validTargets)) {
-            return fragments;
-        }
-
-        if (term.getOptions().contains("not")) {
-            fragments.addSql("not");
-        }
-
-        // Assumes the main query column (columnFullName) is the device ID.
-        // Links to the s_dimension_device table on the device_id column.
         fragments.addSql("exists(select 1 from s_dimension_device dim where dim.device_id = ", columnFullName);
+        fragments.addSql(" and (");
 
-        fragments.addSql("and (");
-        for (int i = 0; i < validTargets.size(); i++) {
-            Map<String, String> target = validTargets.get(i);
-            if (i > 0) {
-                fragments.addSql("or");
+        Map<String, List<Object>> groupedByType = targets.stream()
+            .collect(Collectors.groupingBy(t -> (String) t.get("type"),
+                Collectors.mapping(t -> t.get("id"), Collectors.toList())));
+
+        int groupIndex = 0;
+        for (Map.Entry<String, List<Object>> entry : groupedByType.entrySet()) {
+            String type = entry.getKey();
+            List<Object> ids = entry.getValue();
+            if (groupIndex++ > 0) {
+                fragments.addSql(" or ");
             }
-            fragments.addSql("(dim.dimension_type_id = ? and dim.dimension_id = ?)")
-                     .addParameter(target.get("type"))
-                     .addParameter(target.get("id"));
+            fragments.addSql("(dim.dimension_type_id = ? and dim.dimension_id in (")
+                .addParameter(type)
+                .addFragments(SqlUtils.createQuestionMarks(ids.size()))
+                .addSql("))");
+            fragments.addParameter(ids);
         }
-        fragments.addSql("))"); // close the OR group and the EXISTS subquery
-
+        fragments.addSql("))");
         return fragments;
     }
 }

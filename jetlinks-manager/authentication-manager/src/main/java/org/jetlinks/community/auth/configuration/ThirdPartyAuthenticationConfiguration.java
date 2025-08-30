@@ -27,7 +27,7 @@ public class ThirdPartyAuthenticationConfiguration {
     public ThirdPartyAppAuthenticationManager thirdPartyAppAuthenticationManager(OpenPlatformAppService appService,
                                                                                  OpenPlatformAppDeviceAuthService deviceAuthService,
                                                                                  DimensionDeviceService dimensionDeviceService) {
-        return new ThirdPartyAppAuthenticationManager(appService, deviceAuthService, dimensionDeviceService);
+        return new ThirdPartyAppAuthenticationManager(appService, deviceAuthService,dimensionDeviceService);
     }
 
 }

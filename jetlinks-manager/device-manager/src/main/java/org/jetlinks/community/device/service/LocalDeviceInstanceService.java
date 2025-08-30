@@ -1,6 +1,7 @@
 package org.jetlinks.community.device.service;
 
 import org.hswebframework.ezorm.core.param.Term;
+import org.hswebframework.ezorm.core.param.TermType;
 import org.hswebframework.web.authorization.Authentication;
 import org.hswebframework.web.authorization.Dimension;
 
@@ -1078,52 +1079,79 @@ public class LocalDeviceInstanceService extends GenericReactiveCrudService<Devic
         return Authentication
             .currentReactive()
             .map(auth -> {
-                // ignore admin user
                 if ("admin".equals(auth.getUser().getUsername())) {
                     return param;
                 }
-
-                // Check if the term is already present from the frontend
-                boolean termExists = param.getTerms()
-                                          .stream()
-                                          .anyMatch(term -> "dim-assets".equals(term.getTermType()));
-
-                if (termExists) {
-                    return param;
+                List<Dimension> dimensions = auth.getDimensions();
+                if (dimensions.isEmpty()) {
+                    return param.and("id", "isnull", "1");
                 }
+                String userType = auth.getUser().getUserType();
 
-                // Get all dimensions of the user
-                java.util.List<Dimension> dimensions = auth.getDimensions();
+                // 第三方应用的权限处理
+                if ("application".equals(userType)) {
+                    Map<String, List<Dimension>> dimsByMode = dimensions.stream()
+                        .collect(Collectors.groupingBy(
+                            d -> (String) d.getOption("mode").orElse("OTHER")
+                        ));
 
-                // We are interested in dimensions that can be related to assets, e.g., 'org'
-                java.util.List<java.util.Map<String, String>> targets = dimensions.stream()
-                    .map(dim -> {
-                        java.util.Map<String, String> target = new java.util.HashMap<>();
-                        target.put("type", dim.getType().getId());
-                        target.put("id", dim.getId());
-                        return target;
-                    })
-                    .collect(java.util.stream.Collectors.toList());
+                    List<Dimension> whitelist = dimsByMode.getOrDefault("WHITELIST", Collections.emptyList());
+                    List<Dimension> blacklist = dimsByMode.getOrDefault("BLACKLIST", Collections.emptyList());
 
-                if (targets.isEmpty()) {
-                    // If the user has no relevant dimensions, they can't see any devices.
-                    // Add a condition that is always false.
-                    param.and("id", "isnull", "1");
-                    return param;
+                    Term main = param.nest();
+                    // 白名单部分
+                    if (!whitelist.isEmpty()) {
+                        Term orGroup = main.orNest();
+                        Map<String, List<String>> grouped = whitelist.stream()
+                            .collect(Collectors.groupingBy(d -> d.getType().getId(), Collectors.mapping(Dimension::getId, Collectors.toList())));
+
+                        List<String> deviceIds = grouped.get("device");
+                        if (!CollectionUtils.isEmpty(deviceIds)) {
+                            orGroup.or("id", "in", deviceIds);
+                        }
+                        List<String> productIds = grouped.get("product");
+                        if (!CollectionUtils.isEmpty(productIds)) {
+                            orGroup.or("productId", "in", productIds);
+                        }
+                    }
+
+                    // 黑名单部分
+                    if (!blacklist.isEmpty()) {
+                        Map<String, List<String>> grouped = blacklist.stream()
+                            .collect(Collectors.groupingBy(d -> d.getType().getId(), Collectors.mapping(Dimension::getId, Collectors.toList())));
+
+                        List<String> deviceIds = grouped.get("device");
+                        if (!CollectionUtils.isEmpty(deviceIds)) {
+                            main.and("id", "nin", deviceIds);
+                        }
+                        List<String> productIds = grouped.get("product");
+                        if (!CollectionUtils.isEmpty(productIds)) {
+                            main.and("productId", "nin", productIds);
+                        }
+                    }
+
                 }
+                // 普通用户的权限处理
+                else {
+                    // 普通用户只根据所属科室等维度进行过滤
+                    List<Map<String, String>> targets = dimensions.stream()
+                        .map(dim -> {
+                            Map<String, String> target = new HashMap<>();
+                            target.put("type", dim.getType().getId());
+                            target.put("id", dim.getId());
+                            return target;
+                        })
+                        .collect(Collectors.toList());
 
-                // Create the 'dim-assets' term
-                Term term = new Term();
-                term.setTermType("dim-assets");
-                term.setColumn("id");
-
-                java.util.Map<String, Object> termValue = new java.util.HashMap<>();
-                termValue.put("assetType", "device");
-                termValue.put("targets", targets);
-                term.setValue(termValue);
-
-                // Add the term to the query parameters
-                param.addTerm(term);
+                    Term term = new Term();
+                    term.setTermType("dim-assets");
+                    term.setColumn("id");
+                    Map<String, Object> termValue = new HashMap<>();
+                    termValue.put("assetType", "device");
+                    termValue.put("targets", targets);
+                    term.setValue(termValue);
+                    param.addTerm(term);
+                }
                 return param;
             })
             .defaultIfEmpty(param);

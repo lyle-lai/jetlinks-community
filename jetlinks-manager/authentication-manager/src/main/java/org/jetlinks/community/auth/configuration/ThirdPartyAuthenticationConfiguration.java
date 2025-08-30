@@ -1,6 +1,8 @@
 package org.jetlinks.community.auth.configuration;
 
+import org.jetlinks.community.auth.service.DimensionDeviceService;
 import org.jetlinks.community.auth.service.OpenPlatformApiConfigService;
+import org.jetlinks.community.auth.service.OpenPlatformAppDeviceAuthService;
 import org.jetlinks.community.auth.service.OpenPlatformAppService;
 import org.jetlinks.community.auth.thirdpart.AppCredentialsTokenParser;
 import org.jetlinks.community.auth.thirdpart.ThirdPartyAppAuthenticationManager;
@@ -22,8 +24,10 @@ public class ThirdPartyAuthenticationConfiguration {
 
     @Bean
     @ConditionalOnBean(OpenPlatformAppService.class)
-    public ThirdPartyAppAuthenticationManager thirdPartyAppAuthenticationManager(OpenPlatformAppService appService) {
-        return new ThirdPartyAppAuthenticationManager(appService);
+    public ThirdPartyAppAuthenticationManager thirdPartyAppAuthenticationManager(OpenPlatformAppService appService,
+                                                                                 OpenPlatformAppDeviceAuthService deviceAuthService,
+                                                                                 DimensionDeviceService dimensionDeviceService) {
+        return new ThirdPartyAppAuthenticationManager(appService, deviceAuthService, dimensionDeviceService);
     }
 
 }

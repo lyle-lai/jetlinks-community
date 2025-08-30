@@ -66,7 +66,7 @@ public class AppCredentialsTokenParser implements ReactiveUserTokenParser {
         return isReplayAttack(nonce)
             .filter(isReplay -> !isReplay)
             .switchIfEmpty(Mono.error(new UnAuthorizedException("error.replay_attack", TokenState.deny)))
-            .then(appService.createQuery().where(OpenPlatformAppEntity::getAppId, appId).fetchOne())
+            .then(appService.findByAppId(appId))
             .switchIfEmpty(Mono.error(new UnAuthorizedException("error.app_id_not_found", TokenState.deny)))
             .flatMap(app -> {
                 if (!app.getAppKey().equals(appKey)) {

@@ -7,10 +7,28 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import org.hswebframework.web.cache.ReactiveCache;
+import org.hswebframework.web.cache.ReactiveCacheManager;
+import javax.annotation.PostConstruct;
+import java.util.List;
 
 @Service
-@AllArgsConstructor
 public class OpenPlatformAppDeviceAuthService extends GenericReactiveCrudService<OpenPlatformAppDeviceAuthEntity, String> {
+
+    private final ReactiveCache<List<OpenPlatformAppDeviceAuthEntity>> authCache;
+
+    public OpenPlatformAppDeviceAuthService(ReactiveCacheManager cacheManager) {
+        this.authCache = cacheManager.getCache("open-platform-auth-rules");
+    }
+
+    public Flux<OpenPlatformAppDeviceAuthEntity> getAuthRulesByAppId(String platformAppId) {
+        return authCache.mono("app-id:" + platformAppId)
+            .onCacheMissResume(() -> createQuery()
+                .where(OpenPlatformAppDeviceAuthEntity::getPlatformAppId, platformAppId)
+                .fetch()
+                .collectList())
+            .flatMapIterable(list -> list);
+    }
 
     /**
      * 保存指定应用的授权规则列表（全量覆盖）
@@ -21,10 +39,13 @@ public class OpenPlatformAppDeviceAuthService extends GenericReactiveCrudService
      */
     @Transactional
     public Mono<Void> saveAuthRules(String platformAppId, Flux<OpenPlatformAppDeviceAuthEntity> entityFlux) {
-        // 先删除该应用下的所有旧规则
-        return createDelete()
-            .where(OpenPlatformAppDeviceAuthEntity::getPlatformAppId, platformAppId)
-            .execute()
+        return authCache.evict("app-id:" + platformAppId)
+            .then(
+                // 先删除该应用下的所有旧规则
+                createDelete()
+                    .where(OpenPlatformAppDeviceAuthEntity::getPlatformAppId, platformAppId)
+                    .execute()
+            )
             .then(
                 // 然后保存新的规则
                 entityFlux

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JetLinks WebSocket Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; }
+        .input-group input, .input-group select { width: 100%; padding: 8px; box-sizing: border-box; }
+        .button-group { margin-top: 20px; }
+        button { padding: 10px 15px; margin-right: 10px; cursor: pointer; }
+        #messages { margin-top: 20px; padding: 10px; border: 1px solid #ccc; min-height: 200px; background-color: #f9f9f9; overflow-y: auto; }
+        .message { padding: 5px; border-bottom: 1px solid #eee; }
+        .message.sent { color: blue; }
+        .message.received { color: green; }
+        .message.error { color: red; }
+        .message.info { color: #888; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>JetLinks WebSocket Test</h1>
+
+    <div class="input-group">
+        <label for="wsUrl">WebSocket URL</label>
+        <input type="text" id="wsUrl" value="ws://localhost:8848/medlink/device-data-ws">
+    </div>
+
+    <div class="input-group">
+        <label for="appId">X-App-Id</label>
+        <input type="text" id="appId" value="35132c87db1f4243923b4049ef37a9df">
+    </div>
+
+    <div class="input-group">
+        <label for="appKey">X-App-Key</label>
+        <input type="text" id="appKey" value="252aee07f3044d609e340f2c50a38e7a">
+    </div>
+     <div class="input-group">
+        <label for="appSecret">App Secret</label>
+        <input type="text" id="appSecret" value="YgJ54xFUFKvN/pZHUJ8cTDwXGr9tat7//AVLZdRWE5Y=">
+    </div>
+
+    <div class="input-group">
+        <label for="deviceId">Device ID to Subscribe</label>
+        <input type="text" id="deviceId" value="device123">
+    </div>
+
+    <div class="button-group">
+        <button id="connectBtn">Connect</button>
+        <button id="disconnectBtn" disabled>Disconnect</button>
+        <button id="subscribeBtn" disabled>Subscribe</button>
+        <button id="unsubscribeBtn" disabled>Unsubscribe</button>
+    </div>
+
+    <div id="messages"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script>
+    const wsUrlInput = document.getElementById('wsUrl');
+    const appIdInput = document.getElementById('appId');
+    const appKeyInput = document.getElementById('appKey');
+    const appSecretInput = document.getElementById('appSecret');
+    const deviceIdInput = document.getElementById('deviceId');
+
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const subscribeBtn = document.getElementById('subscribeBtn');
+    const unsubscribeBtn = document.getElementById('unsubscribeBtn');
+    const messagesDiv = document.getElementById('messages');
+
+    let websocket = null;
+
+    function logMessage(message, type = 'info') {
+        const p = document.createElement('p');
+        p.className = `message ${type}`;
+        p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        messagesDiv.appendChild(p);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function generateNonce(length = 16) {
+        let result = '';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const charactersLength = characters.length;
+        for (let i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
+
+    async function calculateSignature(appKey, appSecret, timestamp, nonce, requestPath, queryParams) {
+        let queryString = Object.keys(queryParams)
+            .sort()
+            .map(key => `${key}=${queryParams[key]}`)
+            .join('&');
+
+        let stringToSign = `${appKey}${timestamp}${nonce}${requestPath}`;
+        if (queryString) {
+            stringToSign += `?${queryString}`;
+        }
+
+        logMessage(`String to sign: ${stringToSign}`, 'info');
+
+        const hash = CryptoJS.HmacSHA256(stringToSign, appSecret);
+        return CryptoJS.enc.Hex.stringify(hash);
+    }
+
+
+    connectBtn.addEventListener('click', async () => {
+        const url = wsUrlInput.value;
+        const appId = appIdInput.value;
+        const appKey = appKeyInput.value;
+        const appSecret = appSecretInput.value;
+
+        if (!url || !appId || !appKey || !appSecret) {
+            logMessage('Please fill in all connection details.', 'error');
+            return;
+        }
+
+        const timestamp = Math.floor(Date.now() / 1000);
+        const nonce = generateNonce();
+
+        // The request path for signature calculation should not include query params
+        const requestPath = new URL(url.replace(/^ws/, 'http')).pathname;
+
+        // The query parameters for signature calculation should be empty,
+        // as we are putting auth info into the query string later.
+        const queryParams = {};
+
+        const signature = await calculateSignature(appKey, appSecret, timestamp, nonce, requestPath, queryParams);
+
+        logMessage('Connecting to WebSocket...', 'info');
+        logMessage(`Generated Timestamp: ${timestamp}`, 'info');
+        logMessage(`Generated Nonce: ${nonce}`, 'info');
+        logMessage(`Generated Signature: ${signature}`, 'info');
+
+        const connectUrl = `${url}?X-App-Id=${encodeURIComponent(appId)}&X-App-Key=${encodeURIComponent(appKey)}&X-Timestamp=${timestamp}&X-Nonce=${nonce}&X-Signature=${signature}`;
+
+        logMessage(`Attempting connection to: ${connectUrl}`, 'info');
+
+        websocket = new WebSocket(connectUrl);
+
+        websocket.onopen = () => {
+            logMessage('Connection Established.', 'received');
+            connectBtn.disabled = true;
+            disconnectBtn.disabled = false;
+            subscribeBtn.disabled = false;
+            unsubscribeBtn.disabled = true;
+        };
+
+        websocket.onmessage = (event) => {
+            logMessage(`Received: ${event.data}`, 'received');
+        };
+
+        websocket.onerror = (error) => {
+            logMessage(`WebSocket Error: A connection error occurred. Check console for details.`, 'error');
+            console.error('WebSocket Error:', error);
+        };
+
+        websocket.onclose = (event) => {
+            logMessage(`Connection Closed. Code: ${event.code}, Reason: ${event.reason || 'No reason given'}`, 'info');
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            subscribeBtn.disabled = true;
+            unsubscribeBtn.disabled = true;
+        };
+    });
+
+    disconnectBtn.addEventListener('click', () => {
+        if (websocket) {
+            websocket.close();
+            logMessage('Disconnecting...', 'info');
+        }
+    });
+
+    subscribeBtn.addEventListener('click', () => {
+        const deviceId = deviceIdInput.value;
+        if (!deviceId) {
+            logMessage('Please enter a Device ID to subscribe.', 'error');
+            return;
+        }
+        const message = JSON.stringify({ action: 'subscribe', deviceId: deviceId });
+        logMessage(`Sending: ${message}`, 'sent');
+        websocket.send(message);
+        unsubscribeBtn.disabled = false;
+        subscribeBtn.disabled = true;
+    });
+
+    unsubscribeBtn.addEventListener('click', () => {
+        const message = JSON.stringify({ action: 'unsubscribe' });
+        logMessage(`Sending: ${message}`, 'sent');
+        websocket.send(message);
+        unsubscribeBtn.disabled = true;
+        subscribeBtn.disabled = false;
+    });
+
+</script>
+
+</body>
+</html>

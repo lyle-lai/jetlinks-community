@@ -1,5 +1,6 @@
 package org.jetlinks.community.network.websocket.server;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetlinks.community.auth.common.AppCredentials;
 import org.jetlinks.community.auth.common.AppCredentialsValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
+@Slf4j
 public class AuthenticationHandshakeInterceptor implements HandshakeInterceptor {
 
     @Autowired
@@ -32,22 +34,28 @@ public class AuthenticationHandshakeInterceptor implements HandshakeInterceptor 
                 .map(s -> s.split("=", 2))
                 .collect(Collectors.toMap(arr -> arr[0], arr -> arr.length > 1 ? arr[1] : ""));
 
+        // For signature calculation, we only consider non-authentication parameters.
+        Map<String, String> businessParams = new java.util.HashMap<>(queryParams);
+        businessParams.remove("X-App-Id");
+        businessParams.remove("X-App-Key");
+        businessParams.remove("X-Timestamp");
+        businessParams.remove("X-Nonce");
+        businessParams.remove("X-Signature");
 
         AppCredentials credentials = AppCredentials.builder()
-            .appId(request.getHeaders().getFirst("X-App-Id"))
-            .appKey(request.getHeaders().getFirst("X-App-Key"))
-            .timestamp(request.getHeaders().getFirst("X-Timestamp"))
-            .nonce(request.getHeaders().getFirst("X-Nonce"))
-            .signature(request.getHeaders().getFirst("X-Signature"))
+            .appId(queryParams.get("X-App-Id"))
+            .appKey(queryParams.get("X-App-Key"))
+            .timestamp(queryParams.get("X-Timestamp"))
+            .nonce(queryParams.get("X-Nonce"))
+            .signature(queryParams.get("X-Signature"))
             .requestPath(request.getURI().getPath())
             .requestMethod(HttpMethod.GET) // WebSocket handshake is always GET
-            .queryParams(queryParams)
+            .queryParams(businessParams) // Use only non-auth params for signature
             .build();
 
         try {
             ParsedToken result = credentialsValidator
                 .validate(credentials)
-                .map(ParsedToken.class::cast)
                 .block(); // Block to get result in sync handshake process
 
             if (result != null ) {
@@ -56,7 +64,7 @@ public class AuthenticationHandshakeInterceptor implements HandshakeInterceptor 
             }
             return false;
         } catch (Exception e) {
-            // log.warn("WebSocket handshake authentication failed", e);
+            log.warn("WebSocket handshake authentication failed", e);
             return false;
         }
     }

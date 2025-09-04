@@ -273,6 +273,12 @@
             <artifactId>tdengine-component</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.jetlinks.community.components.network</groupId>
+            <artifactId>websocket-component</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 

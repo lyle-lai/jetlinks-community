@@ -1,5 +1,6 @@
 package org.jetlinks.community.auth.configuration;
 
+import org.jetlinks.community.auth.common.AppCredentialsValidator;
 import org.jetlinks.community.auth.service.DimensionDeviceService;
 import org.jetlinks.community.auth.service.OpenPlatformApiConfigService;
 import org.jetlinks.community.auth.service.OpenPlatformAppDeviceAuthService;
@@ -16,10 +17,8 @@ public class ThirdPartyAuthenticationConfiguration {
 
     @Bean
     @ConditionalOnBean(OpenPlatformAppService.class)
-    public AppCredentialsTokenParser appCredentialsTokenParser(OpenPlatformAppService appService,
-                                                             OpenPlatformApiConfigService apiConfigService,
-                                                             ReactiveRedisOperations<String, String> redis) {
-        return new AppCredentialsTokenParser(appService, apiConfigService, redis);
+    public AppCredentialsTokenParser appCredentialsTokenParser(AppCredentialsValidator validator) {
+        return new AppCredentialsTokenParser(validator);
     }
 
     @Bean

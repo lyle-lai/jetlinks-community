@@ -455,6 +455,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-websocket</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.hswebframework.web</groupId>
                 <artifactId>hsweb-framework</artifactId>
                 <version>${hsweb.framework.version}</version>

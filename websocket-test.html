@@ -2,60 +2,86 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>JetLinks WebSocket Test</title>
+    <title>JetLinks WebSocket Test (New)</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 800px; margin: auto; }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; margin-bottom: 5px; }
-        .input-group input, .input-group select { width: 100%; padding: 8px; box-sizing: border-box; }
-        .button-group { margin-top: 20px; }
-        button { padding: 10px 15px; margin-right: 10px; cursor: pointer; }
-        #messages { margin-top: 20px; padding: 10px; border: 1px solid #ccc; min-height: 200px; background-color: #f9f9f9; overflow-y: auto; }
-        .message { padding: 5px; border-bottom: 1px solid #eee; }
-        .message.sent { color: blue; }
-        .message.received { color: green; }
-        .message.error { color: red; }
-        .message.info { color: #888; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; }
+        .panel { padding: 15px; box-sizing: border-box; }
+        .left-panel { width: 400px; border-right: 1px solid #ccc; display: flex; flex-direction: column; }
+        .right-panel { flex-grow: 1; display: flex; flex-direction: column; }
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .input-group input, .input-group textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .input-group textarea { resize: vertical; min-height: 80px; }
+        .button-group { margin-top: 15px; }
+        button { padding: 10px 15px; margin-right: 10px; cursor: pointer; border-radius: 4px; border: 1px solid #666; background-color: #f0f0f0; }
+        button:disabled { cursor: not-allowed; background-color: #e0e0e0; }
+        .logs { flex-grow: 1; display: flex; flex-direction: column; margin-top: 15px; border: 1px solid #ccc; border-radius: 4px; overflow: hidden;}
+        .log-header { padding: 8px; background-color: #f1f1f1; border-bottom: 1px solid #ccc; font-weight: bold; }
+        .log-content { flex-grow: 1; padding: 10px; background-color: #f9f9f9; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
+        .log-content p { margin: 0 0 5px 0; padding: 0; border-bottom: 1px solid #eee; }
+        .log-content .sent { color: blue; }
+        .log-content .received { color: green; }
+        .log-content .error { color: red; }
+        .log-content .info { color: #555; }
+        #status { font-weight: bold; padding: 5px; border-radius: 4px; display: inline-block; }
+        #status.disconnected { color: red; background-color: #ffdddd; }
+        #status.connected { color: green; background-color: #ddffdd; }
+        #status.connecting { color: orange; background-color: #fff5dd; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>JetLinks WebSocket Test</h1>
-
+<div class="panel left-panel">
+    <h3>Connection</h3>
     <div class="input-group">
         <label for="wsUrl">WebSocket URL</label>
         <input type="text" id="wsUrl" value="ws://localhost:8848/medlink/device-data-ws">
     </div>
-
     <div class="input-group">
-        <label for="appId">X-App-Id</label>
+        <label for="appId">App ID</label>
         <input type="text" id="appId" value="35132c87db1f4243923b4049ef37a9df">
     </div>
-
     <div class="input-group">
-        <label for="appKey">X-App-Key</label>
+        <label for="appKey">App Key</label>
         <input type="text" id="appKey" value="252aee07f3044d609e340f2c50a38e7a">
     </div>
-     <div class="input-group">
+    <div class="input-group">
         <label for="appSecret">App Secret</label>
         <input type="text" id="appSecret" value="YgJ54xFUFKvN/pZHUJ8cTDwXGr9tat7//AVLZdRWE5Y=">
     </div>
-
-    <div class="input-group">
-        <label for="deviceId">Device ID to Subscribe</label>
-        <input type="text" id="deviceId" value="device123">
-    </div>
-
     <div class="button-group">
         <button id="connectBtn">Connect</button>
         <button id="disconnectBtn" disabled>Disconnect</button>
+        <span id="status" class="disconnected">Disconnected</span>
+    </div>
+
+    <hr style="width:100%; margin: 20px 0;">
+
+    <h3>Subscription</h3>
+    <div class="input-group">
+        <label for="deviceIds">Device IDs (one per line)</label>
+        <textarea id="deviceIds">00A037009B002AD7
+device2</textarea>
+    </div>
+    <div class="input-group">
+        <input type="checkbox" id="overwrite" style="width: auto;">
+        <label for="overwrite" style="display: inline;">Overwrite existing subscriptions</label>
+    </div>
+    <div class="button-group">
         <button id="subscribeBtn" disabled>Subscribe</button>
         <button id="unsubscribeBtn" disabled>Unsubscribe</button>
     </div>
+</div>
 
-    <div id="messages"></div>
+<div class="panel right-panel">
+    <div class="logs">
+        <div class="log-header">Logs</div>
+        <div id="messages" class="log-content"></div>
+    </div>
+    <div class="logs">
+        <div class="log-header">Received Data (Hex)</div>
+        <div id="data" class="log-content"></div>
+    </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -64,35 +90,51 @@
     const appIdInput = document.getElementById('appId');
     const appKeyInput = document.getElementById('appKey');
     const appSecretInput = document.getElementById('appSecret');
-    const deviceIdInput = document.getElementById('deviceId');
+    const deviceIdsInput = document.getElementById('deviceIds');
+    const overwriteInput = document.getElementById('overwrite');
 
     const connectBtn = document.getElementById('connectBtn');
     const disconnectBtn = document.getElementById('disconnectBtn');
     const subscribeBtn = document.getElementById('subscribeBtn');
     const unsubscribeBtn = document.getElementById('unsubscribeBtn');
     const messagesDiv = document.getElementById('messages');
+    const dataDiv = document.getElementById('data');
+    const statusSpan = document.getElementById('status');
 
     let websocket = null;
 
-    function logMessage(message, type = 'info') {
+    function log(message, type = 'info') {
         const p = document.createElement('p');
-        p.className = `message ${type}`;
+        p.className = type;
         p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
         messagesDiv.appendChild(p);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
+    function logData(hexString) {
+        const p = document.createElement('p');
+        p.className = 'received';
+        p.textContent = `[${new Date().toLocaleTimeString()}] ${hexString}`;
+        dataDiv.appendChild(p);
+        dataDiv.scrollTop = dataDiv.scrollHeight;
+    }
+
+    function setStatus(text, className) {
+        statusSpan.textContent = text;
+        statusSpan.className = className;
+    }
+
     function generateNonce(length = 16) {
         let result = '';
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        const charactersLength = characters.length;
         for (let i = 0; i < length; i++) {
-            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
         }
         return result;
     }
 
-    async function calculateSignature(appKey, appSecret, timestamp, nonce, requestPath, queryParams) {
+    // Restored original signature function
+    function calculateSignature(appKey, appSecret, timestamp, nonce, requestPath, queryParams) {
         let queryString = Object.keys(queryParams)
             .sort()
             .map(key => `${key}=${queryParams[key]}`)
@@ -103,12 +145,17 @@
             stringToSign += `?${queryString}`;
         }
 
-        logMessage(`String to sign: ${stringToSign}`, 'info');
+        log(`String to sign: ${stringToSign}`, 'info');
 
         const hash = CryptoJS.HmacSHA256(stringToSign, appSecret);
         return CryptoJS.enc.Hex.stringify(hash);
     }
 
+    function arrayBufferToHex(buffer) {
+        return Array.from(new Uint8Array(buffer))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
 
     connectBtn.addEventListener('click', async () => {
         const url = wsUrlInput.value;
@@ -117,7 +164,7 @@
         const appSecret = appSecretInput.value;
 
         if (!url || !appId || !appKey || !appSecret) {
-            logMessage('Please fill in all connection details.', 'error');
+            log('Please fill in all connection details.', 'error');
             return;
         }
 
@@ -127,76 +174,89 @@
         // The request path for signature calculation should not include query params
         const requestPath = new URL(url.replace(/^ws/, 'http')).pathname;
 
-        // The query parameters for signature calculation should be empty,
-        // as we are putting auth info into the query string later.
+        // The query parameters for signature calculation should be empty for this WebSocket handshake
         const queryParams = {};
 
-        const signature = await calculateSignature(appKey, appSecret, timestamp, nonce, requestPath, queryParams);
+        const signature = calculateSignature(appKey, appSecret, timestamp, nonce, requestPath, queryParams);
 
-        logMessage('Connecting to WebSocket...', 'info');
-        logMessage(`Generated Timestamp: ${timestamp}`, 'info');
-        logMessage(`Generated Nonce: ${nonce}`, 'info');
-        logMessage(`Generated Signature: ${signature}`, 'info');
+        log('Connecting to WebSocket...', 'info');
+        log(`Generated Signature: ${signature}`, 'info');
 
         const connectUrl = `${url}?X-App-Id=${encodeURIComponent(appId)}&X-App-Key=${encodeURIComponent(appKey)}&X-Timestamp=${timestamp}&X-Nonce=${nonce}&X-Signature=${signature}`;
 
-        logMessage(`Attempting connection to: ${connectUrl}`, 'info');
+        log(`Connecting to: ${connectUrl}`, 'info');
+        setStatus('Connecting...', 'connecting');
 
         websocket = new WebSocket(connectUrl);
 
         websocket.onopen = () => {
-            logMessage('Connection Established.', 'received');
+            log('Connection Established.', 'received');
+            setStatus('Connected', 'connected');
             connectBtn.disabled = true;
             disconnectBtn.disabled = false;
             subscribeBtn.disabled = false;
-            unsubscribeBtn.disabled = true;
+            unsubscribeBtn.disabled = false;
         };
 
         websocket.onmessage = (event) => {
-            logMessage(`Received: ${event.data}`, 'received');
+            if (event.data instanceof Blob) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const hexString = arrayBufferToHex(this.result);
+                    logData(hexString);
+                };
+                reader.readAsArrayBuffer(event.data);
+            } else {
+                log(`Received Text: ${event.data}`, 'received');
+            }
         };
 
         websocket.onerror = (error) => {
-            logMessage(`WebSocket Error: A connection error occurred. Check console for details.`, 'error');
+            log('WebSocket Error: A connection error occurred. Check browser console for details.', 'error');
             console.error('WebSocket Error:', error);
         };
 
         websocket.onclose = (event) => {
-            logMessage(`Connection Closed. Code: ${event.code}, Reason: ${event.reason || 'No reason given'}`, 'info');
+            log(`Connection Closed. Code: ${event.code}, Reason: ${event.reason || 'No reason given'}`, 'info');
+            setStatus('Disconnected', 'disconnected');
             connectBtn.disabled = false;
             disconnectBtn.disabled = true;
             subscribeBtn.disabled = true;
             unsubscribeBtn.disabled = true;
+            websocket = null;
         };
     });
 
     disconnectBtn.addEventListener('click', () => {
         if (websocket) {
             websocket.close();
-            logMessage('Disconnecting...', 'info');
         }
     });
 
-    subscribeBtn.addEventListener('click', () => {
-        const deviceId = deviceIdInput.value;
-        if (!deviceId) {
-            logMessage('Please enter a Device ID to subscribe.', 'error');
+    function sendSubscriptionMessage(type) {
+        if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+            log('WebSocket is not connected.', 'error');
             return;
         }
-        const message = JSON.stringify({ action: 'subscribe', deviceId: deviceId });
-        logMessage(`Sending: ${message}`, 'sent');
-        websocket.send(message);
-        unsubscribeBtn.disabled = false;
-        subscribeBtn.disabled = true;
-    });
+        const deviceIds = deviceIdsInput.value.split(/[\s,]+/).filter(id => id.trim() !== '');
+        if (deviceIds.length === 0) {
+            log('Please enter at least one Device ID.', 'error');
+            return;
+        }
 
-    unsubscribeBtn.addEventListener('click', () => {
-        const message = JSON.stringify({ action: 'unsubscribe' });
-        logMessage(`Sending: ${message}`, 'sent');
-        websocket.send(message);
-        unsubscribeBtn.disabled = true;
-        subscribeBtn.disabled = false;
-    });
+        const message = {
+            type: type,
+            deviceIds: deviceIds,
+            overwrite: overwriteInput.checked
+        };
+
+        const messageString = JSON.stringify(message);
+        log(`Sending: ${messageString}`, 'sent');
+        websocket.send(messageString);
+    }
+
+    subscribeBtn.addEventListener('click', () => sendSubscriptionMessage('subscribe'));
+    unsubscribeBtn.addEventListener('click', () => sendSubscriptionMessage('unsubscribe'));
 
 </script>
 

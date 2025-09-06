@@ -42,7 +42,7 @@ public class AppCredentialsValidatorImpl implements AppCredentialsValidator {
     private static final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @Override
-    public Mono<ParsedToken> validate(AppCredentials credentials) {
+    public Mono<ParsedToken> validate(AppCredentials credentials, boolean isWebSocket) {
         String appId = credentials.getAppId();
         String appKey = credentials.getAppKey();
         String timestamp = credentials.getTimestamp();
@@ -74,8 +74,9 @@ public class AppCredentialsValidatorImpl implements AppCredentialsValidator {
                 if (app.getStatus() == null || app.getStatus() != 1) {
                     return Mono.error(new UnAuthorizedException("error.app_disabled", TokenState.deny));
                 }
-                if (app.getAuthorizationTypes() == null || !app.getAuthorizationTypes().contains("api")) {
-                    return Mono.error(new UnAuthorizedException("error.api_access_denied", TokenState.deny));
+                String authorizationType = isWebSocket ? "websocket" : "api";
+                if (app.getAuthorizationTypes() == null || !app.getAuthorizationTypes().contains(authorizationType)) {
+                    return Mono.error(new UnAuthorizedException("error." + authorizationType + "_access_denied", TokenState.deny));
                 }
 
                 return apiConfigService.getApiConfigsByAppId(app.getId())

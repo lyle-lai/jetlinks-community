@@ -60,14 +60,14 @@ public class WebSocketDeviceDataHandler implements WebSocketHandler {
                 .queryParams(businessParams)
                 .build();
 
-            return credentialsValidator.validate(credentials);
+            return credentialsValidator.validate(credentials, true);
         }).doOnError(err -> log.warn("WebSocket handshake authentication failed", err));
 
         return authResult
             .flatMap(token -> {
                 // 2. Authentication successful, handle connection
                 allSessions.put(session.getId(), session);
-                log.debug("WebSocket connection established: {}. Total sessions: {}", session.getId(), allSessions.size());
+                log.info("WebSocket connection established: {}. Total sessions: {}", session.getId(), allSessions.size());
                 session.getAttributes().put("user", token);
 
                 // 3. Handle incoming messages
@@ -80,7 +80,7 @@ public class WebSocketDeviceDataHandler implements WebSocketHandler {
                 // 4. Handle connection closed
                 subscriptions.remove(session.getId());
                 allSessions.remove(session.getId());
-                log.debug("WebSocket connection closed: {}. Total sessions: {}", session.getId(), allSessions.size());
+                log.info("WebSocket connection closed: {}. Total sessions: {}", session.getId(), allSessions.size());
             })
             .onErrorResume(err -> {
                 log.warn("WebSocket authentication failed, closing connection.", err);

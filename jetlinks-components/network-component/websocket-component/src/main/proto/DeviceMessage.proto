@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package org.jetlinks.community.network.websocket.protocol;
+
+option java_outer_classname = "DeviceMessageProto";
+
+message DeviceData {
+    string deviceName = 1;
+    string deviceId = 2;
+    repeated ContentItem Content = 3;
+    string Time = 4;
+}
+
+message ContentItem {
+    string Category = 1;
+    ResultValue Result = 2;
+    string Unit = 3;
+    int32 DataType = 4;
+    string AlarmValue = 5;
+    string TakeTime = 6;
+}
+
+message ResultValue {
+    oneof value {
+        string string_value = 1;
+        Waveform waveform_value = 2;
+    }
+}
+
+message Waveform {
+    repeated int32 values = 1;
+}

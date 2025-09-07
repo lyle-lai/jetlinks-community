@@ -6,6 +6,7 @@ import org.jetlinks.core.message.codec.DefaultTransport;
 import org.jetlinks.core.metadata.DataType;
 import org.jetlinks.core.metadata.DefaultConfigMetadata;
 import org.jetlinks.core.metadata.MetadataFeature;
+import org.jetlinks.core.metadata.types.ArrayType;
 import org.jetlinks.core.metadata.types.DoubleType;
 import org.jetlinks.core.metadata.types.IntType;
 import org.jetlinks.core.metadata.types.StringType;
@@ -30,9 +31,10 @@ public class HL7ProtocolSupportProvider implements ProtocolSupportProvider {
         support.addFeature(MetadataFeature.diffMetadataSameProduct);
 
         // 配置设备元数据
-        JetLinksDeviceMetadata metadata = new JetLinksDeviceMetadata("protocol", "协议包物模A型");
+        JetLinksDeviceMetadata metadata = new JetLinksDeviceMetadata("protocol", "迈瑞协议包物模型HL7_2.6");
         metadata.addProperty(new JetLinksPropertyMetadata("188436_MDC_TEMP_BLD", "温度", IntType.GLOBAL));
         metadata.addProperty(new JetLinksPropertyMetadata("150033_MDC_PRESS_BLD_ART_SYS", "有创收缩压", DoubleType.GLOBAL));
+        metadata.addProperty(new JetLinksPropertyMetadata("150452_MDC_PULS_OXIM_PLETH", "呼吸波形", new ArrayType()));
         support.addDefaultMetadata(DefaultTransport.TCP, metadata);
 
         //设置配置定义信息

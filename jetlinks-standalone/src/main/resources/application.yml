@@ -139,6 +139,7 @@ jetlinks:
 logging:
   level:
     org.jetlinks: debug
+    com.lyle: debug
     rule.engine: debug
     org.hswebframework: debug
     org.springframework.transaction: debug

@@ -230,46 +230,37 @@ public class DeviceMetadataMappingService extends GenericReactiveCrudService<Dev
     }
 
     private Map<String, Object> applyMappings(Map<String, Object> rawData, List<DeviceMetadataMappingDetail> mappings) {
-        Map<String, DeviceMetadataMappingDetail> mappingCache = mappings.stream()
-                                                                        .filter(DeviceMetadataMappingDetail::isCustomMapping)
-                                                                        .collect(Collectors.toMap(
-                                                                            DeviceMetadataMappingDetail::getMetadataId,
-                                                                            mapping -> mapping
-                                                                        ));
-        // 循环mappingCache,因为可能存在多个物模型id对应一个原始id
-        Map<String, Object> transformedData = new HashMap<>(rawData.size());
-        for (Map.Entry<String, DeviceMetadataMappingDetail> entry : mappingCache.entrySet()) {
-            String metadataId = entry.getKey();
-            DeviceMetadataMappingDetail mapping = entry.getValue();
-            String originalProperty = mapping.getOriginalId();
-            Object originalValue = rawData.get(originalProperty);
-            if (originalValue != null) {
-                transformedData.put(metadataId, applyValueTransformation(originalValue, mapping.getOthers()));
-            }
-            else {
-                transformedData.put(metadataId, originalValue);
-            }
-        }
+        // 创建一个从 原始ID -> 映射规则 的查找表，以便高效查询
+        Map<String, DeviceMetadataMappingDetail> mappingByOriginalId = mappings.stream()
+            .filter(DeviceMetadataMappingDetail::isCustomMapping)
+            .collect(Collectors.toMap(
+                DeviceMetadataMappingDetail::getOriginalId,
+                Function.identity(),
+                (existing, replacement) -> replacement // 如果存在重复的原始ID映射,以后面的为准
+            ));
 
-        for (Map.Entry<String, Object> entry : rawData.entrySet()) {
-            String originalProperty = entry.getKey();
-            Object originalValue = entry.getValue();
+        Map<String, Object> finalData = new HashMap<>();
 
-            DeviceMetadataMappingDetail mapping = mappingCache.get(originalProperty);
+        // 遍历所有传入的原始数据
+        for (Map.Entry<String, Object> rawEntry : rawData.entrySet()) {
+            String originalId = rawEntry.getKey();
+            Object originalValue = rawEntry.getValue();
+
+            // 检查此原始ID是否存在映射规则
+            DeviceMetadataMappingDetail mapping = mappingByOriginalId.get(originalId);
 
             if (mapping != null) {
-                if (mapping.getOthers() == null || mapping.getOthers().isEmpty() || !mapping.getOthers().containsKey("transformationConfig")) {
-                    transformedData.put(originalProperty, originalValue);
-                }
-                else {
-                    Map<String, Object> transformationConfig = (Map<String, Object>) mapping.getOthers().get("transformationConfig");
-                    transformedData.put(mapping.getMetadataId(), applyValueTransformation(originalValue, transformationConfig));
-                }
+                // 如果存在映射,则应用转换,并使用新的ID(metadataId)
+                String newId = mapping.getMetadataId();
+                Object transformedValue = applyValueTransformation(originalValue, mapping.getOthers());
+                finalData.put(newId, transformedValue);
             } else {
-                transformedData.put(originalProperty, originalValue);
+                // 如果没有映射,则直接保留原始数据
+                finalData.put(originalId, originalValue);
             }
         }
-        return transformedData;
+
+        return finalData;
     }
 
     /**

@@ -29,10 +29,9 @@ import org.jetlinks.supports.protocol.blocking.BlockingMessageDecodeContext;
 import org.jetlinks.supports.protocol.blocking.BlockingMessageEncodeContext;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
 
@@ -49,7 +48,7 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
         Logger logger = context.logger();
 
         if (logger.isDebugEnabled()) {
-            logger.debug("收到设备TCP报文: {}", ByteBufUtil.hexDump(payload));
+            logger.debug("收到设备TCP报文(诊断): {}", ByteBufUtil.hexDump(payload));
         }
 
         String hl7Str = null;
@@ -77,6 +76,7 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
             if (device == null || device.getDeviceId() == null) {
                 boolean success = handleLogin(context,deviceId);
                 if (!success) {
+                    logger.error("设备登录失败,deviceId={}", deviceId);
                     sendAck(context, message, false); // 发送 AE
                     return;
                 }
@@ -144,59 +144,118 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
     /// <param name="logger"></param>
     /// <returns></returns>
     private ReportPropertyMessage parsePayload(Message message, BlockingMessageDecodeContext context, Logger logger, String deviceId) throws HL7Exception {
-        if (message instanceof ORU_R01) {
-            ORU_R01 oruMessage = (ORU_R01) message;
-            List<ORU_R01_PATIENT_RESULT> patientResults = oruMessage.getPATIENT_RESULTAll();
-            Map<String, Object> properties = new HashMap<>();
-            Map<String, Long> sourceTimes = new HashMap<>();
-
-            long currentTimeMillis = System.currentTimeMillis();
-
-            for (ORU_R01_PATIENT_RESULT patientResult : patientResults) {
-                List<ORU_R01_ORDER_OBSERVATION> orderObservations = patientResult.getORDER_OBSERVATIONAll();
-
-                for (ORU_R01_ORDER_OBSERVATION orderObservation : orderObservations) {
-                    List<ORU_R01_OBSERVATION> observations = orderObservation.getOBSERVATIONAll();
-                    for (ORU_R01_OBSERVATION observation : observations) {
-                        OBX obx = observation.getOBX();
-
-                        // OBX-3: 观测项标识（参数名） -> obx.getObservationIdentifier().getIdentifier().getValue()
-                        // OBX-5: 观测值（参数值） -> obx.getObservationValue(0).getData().toString()
-                        String paramName = Optional.ofNullable(obx.getObservationIdentifier())
-                                                   .map(id -> id.getIdentifier().getValue() + "_" + id.getCwe2_Text())
-                                                   .orElse(null);
-
-                        String paramValue = obx.getObservationValue().length > 0
-                            ? obx.getObservationValue(0).getData().toString()
-                            : null;
-
-                        if (paramName != null && paramValue != null) {
-                            properties.put(paramName, paramValue);
-                            sourceTimes.put(paramName,currentTimeMillis);
-                        }
-                    }
-                }
-            }
-
-            ReportPropertyMessage report = new ReportPropertyMessage();
-            // 设置设备id
-            report.setDeviceId(Optional.ofNullable(context.getDevice()).map(BlockingDeviceOperator::getDeviceId).orElse(deviceId));
-            report.setProperties(properties);
-
-            // 设置时间
-            report.setTimestamp(currentTimeMillis);
-            report.setPropertySourceTimes(sourceTimes);
-
-            // 设置消息类型: 0 表示属性; 1 表示波形
-            report.addHeader("dataType", PayloadDataType.PROPERTY.getValue());
-
-            logger.info("HL7 解析成功, deviceId={}, properties={}", report.getDeviceId(), properties);
-
-            return report;
-        } else {
-            logger.warn("不支持的 HL7 消息类型: {}", message.getClass().getSimpleName());
+        if (!(message instanceof ORU_R01)) {
+            logger.warn("Unsupported HL7 message type: {}", message.getClass().getSimpleName());
+            return null;
         }
-        return null;
+
+        ORU_R01 oruMessage = (ORU_R01) message;
+        Map<String, Object> properties = new HashMap<>();
+        Map<String, Long> sourceTimes = new HashMap<>();
+        Map<String, String> propertyStates = new HashMap<>();
+        final long currentTimeMillis = System.currentTimeMillis();
+        // 使用原子引用, 以便在lambda中修改
+        final AtomicReference<PayloadDataType> dataType = new AtomicReference<>(PayloadDataType.PROPERTY);
+
+        oruMessage.getPATIENT_RESULTAll()
+                  .stream()
+                  .flatMap(pr -> {
+                      try {
+                          return pr.getORDER_OBSERVATIONAll().stream();
+                      } catch (HL7Exception e) {
+                          throw new RuntimeException(e);
+                      }
+                  })
+                  .forEach(orderObs -> {
+                      List<OBX> obxSegments = null;
+                      try {
+                          obxSegments = orderObs.getOBSERVATIONAll()
+                                                          .stream()
+                                                          .map(ORU_R01_OBSERVATION::getOBX)
+                                                          .collect(Collectors.toList());
+                      } catch (HL7Exception e) {
+                          throw new RuntimeException(e);
+                      }
+
+                      // 优先查找是否存在波形数据 (值类型为NA)
+                      Optional<OBX> waveformObxOpt = obxSegments.stream()
+                                                                  .filter(obx -> "NA".equals(obx.getValueType().getValue()))
+                                                                  .findFirst();
+
+                      if (waveformObxOpt.isPresent()) {
+                          dataType.set(PayloadDataType.WAVEFORM);
+                          OBX waveformObx = waveformObxOpt.get();
+
+                          // 1. 解析波形数据
+                          String paramName = Optional.ofNullable(waveformObx.getObservationIdentifier())
+                                                     .map(id -> id.getIdentifier().getValue() + "_" + id.getText().getValue())
+                                                     .orElse("waveform");
+
+                          // 修正: 移除 "NA[...]" 的包装
+                          String rawWaveformString = waveformObx.getObservationValue(0).getData().toString();
+                          String waveformContent = rawWaveformString;
+                          if (rawWaveformString.startsWith("NA[") && rawWaveformString.endsWith("]")) {
+                              waveformContent = rawWaveformString.substring(3, rawWaveformString.length() - 1);
+                          }
+
+                          String[] stringValues = waveformContent.split("\\^");
+                          List<Integer> waveValues = Arrays.stream(stringValues)
+                                                           .filter(s -> s != null && !s.isEmpty())
+                                                           .map(Integer::parseInt)
+                                                           .collect(Collectors.toList());
+
+                          properties.put(paramName, waveValues);
+                          sourceTimes.put(paramName, currentTimeMillis);
+
+                          // 2. 从同组的其他OBX段中解析元数据, 如采样率
+                          obxSegments.stream()
+                                     .filter(obx -> obx != waveformObx)
+                                     .forEach(metaObx -> {
+                                         String metaName = Optional.ofNullable(metaObx.getObservationIdentifier())
+                                                                 .map(id -> id.getText().getValue())
+                                                                 .orElse("");
+                                         if (metaObx.getObservationValue().length > 0) {
+                                             String metaValue = metaObx.getObservationValue(0).getData().toString();
+                                             if ("MDC_ATTR_SAMP_RATE".equals(metaName)) {
+                                                 propertyStates.put(paramName, metaValue);
+                                             }
+                                         }
+                                     });
+
+                      } else {
+                          // 3. 如果不是波形数据, 则按普通属性处理
+                          obxSegments.forEach(obx -> {
+                              String paramName = Optional.ofNullable(obx.getObservationIdentifier())
+                                                         .map(id -> id.getIdentifier().getValue() + "_" + id.getText().getValue())
+                                                         .orElse(null);
+                              if (obx.getObservationValue() == null || obx.getObservationValue().length == 0) {
+                                  return; // continue
+                              }
+                              String paramValue = obx.getObservationValue(0).getData().toString();
+
+                              if (paramName != null && paramValue != null) {
+                                  properties.put(paramName, paramValue);
+                                  sourceTimes.put(paramName, currentTimeMillis);
+                              }
+                          });
+                      }
+                  });
+
+        if (properties.isEmpty()) {
+            return null;
+        }
+
+        ReportPropertyMessage report = new ReportPropertyMessage();
+        report.setDeviceId(Optional.ofNullable(context.getDevice()).map(BlockingDeviceOperator::getDeviceId).orElse(deviceId));
+        report.setProperties(properties);
+        report.setTimestamp(currentTimeMillis);
+        report.setPropertySourceTimes(sourceTimes);
+        report.setPropertyStates(propertyStates);
+        report.addHeader("dataType", dataType.get().getValue());
+
+        logger.debug("HL7 parsed successfully(诊断), deviceId={}, dataType={}, properties.keys={}", report.getDeviceId(), dataType.get(), properties.keySet());
+
+        return report;
     }
 
     //处理登录逻辑

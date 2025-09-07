@@ -72,6 +72,10 @@ public class DeviceDataForwardingService {
             .orElse(Collections.emptyMap());
 
         for (Map.Entry<String, Object> entry : properties.entrySet()) {
+            Object result = entry.getValue();
+            if (result == null) {
+                continue;
+            }
             DeviceMessageProto.ContentItem.Builder itemBuilder = DeviceMessageProto.ContentItem.newBuilder();
 
             String propertyKey = entry.getKey();
@@ -87,7 +91,7 @@ public class DeviceDataForwardingService {
             }
 
             DeviceMessageProto.ResultValue.Builder resultBuilder = DeviceMessageProto.ResultValue.newBuilder();
-            Object result = entry.getValue();
+
 
             // 如果是波形数据，那对应值就是数组
             if (dataType == DataType.WAVEFORM) {

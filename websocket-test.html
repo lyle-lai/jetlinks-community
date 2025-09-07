@@ -4,10 +4,26 @@
     <meta charset="UTF-8">
     <title>JetLinks WebSocket Test (New & Improved)</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; }
         .panel { padding: 15px; box-sizing: border-box; }
-        .left-panel { width: 400px; border-right: 1px solid #ccc; display: flex; flex-direction: column; overflow-y: auto; }
-        .right-panel { flex-grow: 1; display: flex; flex-direction: column; }
+        .left-panel {
+            width: 400px; /* Initial width */
+            min-width: 250px; /* Prevent from being too small */
+            flex-shrink: 0; /* Prevent shrinking */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .resizer {
+            width: 5px;
+            background: #ddd;
+            cursor: col-resize;
+            flex-shrink: 0;
+        }
+        .resizer:hover {
+            background: #ccc;
+        }
+        .right-panel { flex-grow: 1; display: flex; flex-direction: column; min-width: 300px; }
         .input-group { margin-bottom: 12px; }
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .input-group input, .input-group textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
@@ -73,6 +89,8 @@ device2</textarea>
         <button id="unsubscribeBtn" disabled>Unsubscribe</button>
     </div>
 </div>
+
+<div id="resizer" class="resizer"></div>
 
 <div class="panel right-panel">
     <div class="logs">
@@ -316,7 +334,7 @@ device2</textarea>
             log('WebSocket is not connected.', 'error');
             return;
         }
-        const deviceIds = deviceIdsInput.value.split(/["\s,"]+/).filter(id => id.trim() !== '');
+        const deviceIds = deviceIdsInput.value.split(new RegExp('[\\s,]+')).filter(id => id.trim() !== '');
         if (deviceIds.length === 0) {
             log('Please enter at least one Device ID.', 'error');
             return;
@@ -335,6 +353,32 @@ device2</textarea>
 
     subscribeBtn.addEventListener('click', () => sendSubscriptionMessage('subscribe'));
     unsubscribeBtn.addEventListener('click', () => sendSubscriptionMessage('unsubscribe'));
+
+    // --- Resizer Logic ---
+    const resizer = document.getElementById('resizer');
+    const leftPanel = document.querySelector('.left-panel');
+
+    resizer.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', stopResizing);
+    });
+
+    function handleMouseMove(e) {
+        let newLeftWidth = e.clientX;
+        const minWidth = 250; // from CSS
+        const maxWidth = window.innerWidth - 300; // leave 300px for right panel
+
+        if (newLeftWidth < minWidth) newLeftWidth = minWidth;
+        if (newLeftWidth > maxWidth) newLeftWidth = maxWidth;
+
+        leftPanel.style.width = `${newLeftWidth}px`;
+    }
+
+    function stopResizing() {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', stopResizing);
+    }
 
 </script>
 

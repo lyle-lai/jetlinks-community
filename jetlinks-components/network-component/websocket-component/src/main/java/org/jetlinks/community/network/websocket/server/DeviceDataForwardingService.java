@@ -134,7 +134,7 @@ public class DeviceDataForwardingService {
         return dataBuilder.build().toByteArray();
     }
 
-    @Subscribe(topics = "/device/**", id = "websocket-data-forwarder")
+    @Subscribe(topics = "/device-transformed/**", id = "websocket-data-forwarder")
     public Mono<Void> handleDeviceMessage(DeviceMessage message) {
         String deviceId = message.getDeviceId();
         if (deviceId == null) {

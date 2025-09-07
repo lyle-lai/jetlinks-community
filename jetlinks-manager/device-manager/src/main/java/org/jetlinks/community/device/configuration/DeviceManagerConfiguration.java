@@ -57,8 +57,9 @@ public class DeviceManagerConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "device.message.writer.time-series", name = "enabled", havingValue = "true", matchIfMissing = true)
     public TimeSeriesMessageWriterConnector timeSeriesMessageWriterConnector(DeviceDataService dataService,
-                                                                             DeviceMetadataMappingService deviceMetadataMappingService) {
-        return new TimeSeriesMessageWriterConnector(dataService, deviceMetadataMappingService);
+                                                                             DeviceMetadataMappingService deviceMetadataMappingService,
+                                                                             EventBus eventBus) {
+        return new TimeSeriesMessageWriterConnector(dataService, deviceMetadataMappingService,eventBus);
     }
 
     @AutoConfiguration

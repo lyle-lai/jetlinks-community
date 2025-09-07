@@ -4,29 +4,35 @@ package org.jetlinks.community.network.websocket.protocol;
 
 option java_outer_classname = "DeviceMessageProto";
 
+// 设备数据
 message DeviceData {
-    string deviceName = 1;
-    string deviceId = 2;
-    repeated ContentItem Content = 3;
-    string Time = 4;
+    string device_id = 1;
+    int32 data_type = 2;
+    repeated ContentItem content = 3;
+    int64 time = 4;
 }
 
+// 内容项
 message ContentItem {
-    string Category = 1;
-    ResultValue Result = 2;
-    string Unit = 3;
-    int32 DataType = 4;
-    string AlarmValue = 5;
-    string TakeTime = 6;
+    string category = 1;
+    ResultValue result = 2;
+    string unit = 3;
+    string alarm_value = 4;
+    int64 take_time = 5;
+    int32 sampling_rate = 6;
 }
 
+// 结果值
 message ResultValue {
     oneof value {
         string string_value = 1;
         Waveform waveform_value = 2;
+        double double_value = 3;
+        bool bool_value = 4;
     }
 }
 
+// 波形数据
 message Waveform {
     repeated int32 values = 1;
 }

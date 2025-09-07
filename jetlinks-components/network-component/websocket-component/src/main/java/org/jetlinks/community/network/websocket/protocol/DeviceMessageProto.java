@@ -19,66 +19,62 @@ public final class DeviceMessageProto {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>string deviceName = 1;</code>
-     * @return The deviceName.
-     */
-    java.lang.String getDeviceName();
-    /**
-     * <code>string deviceName = 1;</code>
-     * @return The bytes for deviceName.
-     */
-    com.google.protobuf.ByteString
-        getDeviceNameBytes();
-
-    /**
-     * <code>string deviceId = 2;</code>
+     * <code>string device_id = 1;</code>
      * @return The deviceId.
      */
     java.lang.String getDeviceId();
     /**
-     * <code>string deviceId = 2;</code>
+     * <code>string device_id = 1;</code>
      * @return The bytes for deviceId.
      */
     com.google.protobuf.ByteString
         getDeviceIdBytes();
 
     /**
-     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+     * <code>int32 data_type = 2;</code>
+     * @return The dataType.
+     */
+    int getDataType();
+
+    /**
+     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
      */
     java.util.List<org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem> 
         getContentList();
     /**
-     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
      */
     org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem getContent(int index);
     /**
-     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
      */
     int getContentCount();
     /**
-     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
      */
     java.util.List<? extends org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItemOrBuilder> 
         getContentOrBuilderList();
     /**
-     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
      */
     org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItemOrBuilder getContentOrBuilder(
         int index);
 
     /**
-     * <code>string Time = 4;</code>
+     * <pre>
+     * 优化: 使用int64替代string存储时间戳
+     * </pre>
+     *
+     * <code>int64 time = 4;</code>
      * @return The time.
      */
-    java.lang.String getTime();
-    /**
-     * <code>string Time = 4;</code>
-     * @return The bytes for time.
-     */
-    com.google.protobuf.ByteString
-        getTimeBytes();
+    long getTime();
   }
   /**
+   * <pre>
+   * 设备数据
+   * </pre>
+   *
    * Protobuf type {@code org.jetlinks.community.network.websocket.protocol.DeviceData}
    */
   public  static final class DeviceData extends
@@ -91,10 +87,8 @@ public final class DeviceMessageProto {
       super(builder);
     }
     private DeviceData() {
-      deviceName_ = "";
       deviceId_ = "";
       content_ = java.util.Collections.emptyList();
-      time_ = "";
     }
 
     @java.lang.Override
@@ -131,13 +125,12 @@ public final class DeviceMessageProto {
             case 10: {
               java.lang.String s = input.readStringRequireUtf8();
 
-              deviceName_ = s;
+              deviceId_ = s;
               break;
             }
-            case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
+            case 16: {
 
-              deviceId_ = s;
+              dataType_ = input.readInt32();
               break;
             }
             case 26: {
@@ -149,10 +142,9 @@ public final class DeviceMessageProto {
                   input.readMessage(org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem.parser(), extensionRegistry));
               break;
             }
-            case 34: {
-              java.lang.String s = input.readStringRequireUtf8();
+            case 32: {
 
-              time_ = s;
+              time_ = input.readInt64();
               break;
             }
             default: {
@@ -190,46 +182,10 @@ public final class DeviceMessageProto {
               org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.DeviceData.class, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.DeviceData.Builder.class);
     }
 
-    public static final int DEVICENAME_FIELD_NUMBER = 1;
-    private volatile java.lang.Object deviceName_;
-    /**
-     * <code>string deviceName = 1;</code>
-     * @return The deviceName.
-     */
-    public java.lang.String getDeviceName() {
-      java.lang.Object ref = deviceName_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        deviceName_ = s;
-        return s;
-      }
-    }
-    /**
-     * <code>string deviceName = 1;</code>
-     * @return The bytes for deviceName.
-     */
-    public com.google.protobuf.ByteString
-        getDeviceNameBytes() {
-      java.lang.Object ref = deviceName_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        deviceName_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int DEVICEID_FIELD_NUMBER = 2;
+    public static final int DEVICE_ID_FIELD_NUMBER = 1;
     private volatile java.lang.Object deviceId_;
     /**
-     * <code>string deviceId = 2;</code>
+     * <code>string device_id = 1;</code>
      * @return The deviceId.
      */
     public java.lang.String getDeviceId() {
@@ -245,7 +201,7 @@ public final class DeviceMessageProto {
       }
     }
     /**
-     * <code>string deviceId = 2;</code>
+     * <code>string device_id = 1;</code>
      * @return The bytes for deviceId.
      */
     public com.google.protobuf.ByteString
@@ -262,35 +218,45 @@ public final class DeviceMessageProto {
       }
     }
 
+    public static final int DATA_TYPE_FIELD_NUMBER = 2;
+    private int dataType_;
+    /**
+     * <code>int32 data_type = 2;</code>
+     * @return The dataType.
+     */
+    public int getDataType() {
+      return dataType_;
+    }
+
     public static final int CONTENT_FIELD_NUMBER = 3;
     private java.util.List<org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem> content_;
     /**
-     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
      */
     public java.util.List<org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem> getContentList() {
       return content_;
     }
     /**
-     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
      */
     public java.util.List<? extends org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItemOrBuilder> 
         getContentOrBuilderList() {
       return content_;
     }
     /**
-     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
      */
     public int getContentCount() {
       return content_.size();
     }
     /**
-     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
      */
     public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem getContent(int index) {
       return content_.get(index);
     }
     /**
-     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+     * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
      */
     public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItemOrBuilder getContentOrBuilder(
         int index) {
@@ -298,39 +264,17 @@ public final class DeviceMessageProto {
     }
 
     public static final int TIME_FIELD_NUMBER = 4;
-    private volatile java.lang.Object time_;
+    private long time_;
     /**
-     * <code>string Time = 4;</code>
+     * <pre>
+     * 优化: 使用int64替代string存储时间戳
+     * </pre>
+     *
+     * <code>int64 time = 4;</code>
      * @return The time.
      */
-    public java.lang.String getTime() {
-      java.lang.Object ref = time_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        time_ = s;
-        return s;
-      }
-    }
-    /**
-     * <code>string Time = 4;</code>
-     * @return The bytes for time.
-     */
-    public com.google.protobuf.ByteString
-        getTimeBytes() {
-      java.lang.Object ref = time_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        time_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
+    public long getTime() {
+      return time_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -347,17 +291,17 @@ public final class DeviceMessageProto {
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!getDeviceNameBytes().isEmpty()) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, deviceName_);
-      }
       if (!getDeviceIdBytes().isEmpty()) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, deviceId_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, deviceId_);
+      }
+      if (dataType_ != 0) {
+        output.writeInt32(2, dataType_);
       }
       for (int i = 0; i < content_.size(); i++) {
         output.writeMessage(3, content_.get(i));
       }
-      if (!getTimeBytes().isEmpty()) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, time_);
+      if (time_ != 0L) {
+        output.writeInt64(4, time_);
       }
       unknownFields.writeTo(output);
     }
@@ -368,18 +312,20 @@ public final class DeviceMessageProto {
       if (size != -1) return size;
 
       size = 0;
-      if (!getDeviceNameBytes().isEmpty()) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, deviceName_);
-      }
       if (!getDeviceIdBytes().isEmpty()) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, deviceId_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, deviceId_);
+      }
+      if (dataType_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(2, dataType_);
       }
       for (int i = 0; i < content_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(3, content_.get(i));
       }
-      if (!getTimeBytes().isEmpty()) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, time_);
+      if (time_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(4, time_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -396,14 +342,14 @@ public final class DeviceMessageProto {
       }
       org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.DeviceData other = (org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.DeviceData) obj;
 
-      if (!getDeviceName()
-          .equals(other.getDeviceName())) return false;
       if (!getDeviceId()
           .equals(other.getDeviceId())) return false;
+      if (getDataType()
+          != other.getDataType()) return false;
       if (!getContentList()
           .equals(other.getContentList())) return false;
-      if (!getTime()
-          .equals(other.getTime())) return false;
+      if (getTime()
+          != other.getTime()) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -415,16 +361,17 @@ public final class DeviceMessageProto {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + DEVICENAME_FIELD_NUMBER;
-      hash = (53 * hash) + getDeviceName().hashCode();
-      hash = (37 * hash) + DEVICEID_FIELD_NUMBER;
+      hash = (37 * hash) + DEVICE_ID_FIELD_NUMBER;
       hash = (53 * hash) + getDeviceId().hashCode();
+      hash = (37 * hash) + DATA_TYPE_FIELD_NUMBER;
+      hash = (53 * hash) + getDataType();
       if (getContentCount() > 0) {
         hash = (37 * hash) + CONTENT_FIELD_NUMBER;
         hash = (53 * hash) + getContentList().hashCode();
       }
       hash = (37 * hash) + TIME_FIELD_NUMBER;
-      hash = (53 * hash) + getTime().hashCode();
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getTime());
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -521,6 +468,10 @@ public final class DeviceMessageProto {
       return builder;
     }
     /**
+     * <pre>
+     * 设备数据
+     * </pre>
+     *
      * Protobuf type {@code org.jetlinks.community.network.websocket.protocol.DeviceData}
      */
     public static final class Builder extends
@@ -559,9 +510,9 @@ public final class DeviceMessageProto {
       @java.lang.Override
       public Builder clear() {
         super.clear();
-        deviceName_ = "";
-
         deviceId_ = "";
+
+        dataType_ = 0;
 
         if (contentBuilder_ == null) {
           content_ = java.util.Collections.emptyList();
@@ -569,7 +520,7 @@ public final class DeviceMessageProto {
         } else {
           contentBuilder_.clear();
         }
-        time_ = "";
+        time_ = 0L;
 
         return this;
       }
@@ -598,8 +549,8 @@ public final class DeviceMessageProto {
       public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.DeviceData buildPartial() {
         org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.DeviceData result = new org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.DeviceData(this);
         int from_bitField0_ = bitField0_;
-        result.deviceName_ = deviceName_;
         result.deviceId_ = deviceId_;
+        result.dataType_ = dataType_;
         if (contentBuilder_ == null) {
           if (((bitField0_ & 0x00000001) != 0)) {
             content_ = java.util.Collections.unmodifiableList(content_);
@@ -658,13 +609,12 @@ public final class DeviceMessageProto {
 
       public Builder mergeFrom(org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.DeviceData other) {
         if (other == org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.DeviceData.getDefaultInstance()) return this;
-        if (!other.getDeviceName().isEmpty()) {
-          deviceName_ = other.deviceName_;
-          onChanged();
-        }
         if (!other.getDeviceId().isEmpty()) {
           deviceId_ = other.deviceId_;
           onChanged();
+        }
+        if (other.getDataType() != 0) {
+          setDataType(other.getDataType());
         }
         if (contentBuilder_ == null) {
           if (!other.content_.isEmpty()) {
@@ -692,9 +642,8 @@ public final class DeviceMessageProto {
             }
           }
         }
-        if (!other.getTime().isEmpty()) {
-          time_ = other.time_;
-          onChanged();
+        if (other.getTime() != 0L) {
+          setTime(other.getTime());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -726,85 +675,9 @@ public final class DeviceMessageProto {
       }
       private int bitField0_;
 
-      private java.lang.Object deviceName_ = "";
-      /**
-       * <code>string deviceName = 1;</code>
-       * @return The deviceName.
-       */
-      public java.lang.String getDeviceName() {
-        java.lang.Object ref = deviceName_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          deviceName_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <code>string deviceName = 1;</code>
-       * @return The bytes for deviceName.
-       */
-      public com.google.protobuf.ByteString
-          getDeviceNameBytes() {
-        java.lang.Object ref = deviceName_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          deviceName_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>string deviceName = 1;</code>
-       * @param value The deviceName to set.
-       * @return This builder for chaining.
-       */
-      public Builder setDeviceName(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        deviceName_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string deviceName = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearDeviceName() {
-        
-        deviceName_ = getDefaultInstance().getDeviceName();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string deviceName = 1;</code>
-       * @param value The bytes for deviceName to set.
-       * @return This builder for chaining.
-       */
-      public Builder setDeviceNameBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        deviceName_ = value;
-        onChanged();
-        return this;
-      }
-
       private java.lang.Object deviceId_ = "";
       /**
-       * <code>string deviceId = 2;</code>
+       * <code>string device_id = 1;</code>
        * @return The deviceId.
        */
       public java.lang.String getDeviceId() {
@@ -820,7 +693,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>string deviceId = 2;</code>
+       * <code>string device_id = 1;</code>
        * @return The bytes for deviceId.
        */
       public com.google.protobuf.ByteString
@@ -837,7 +710,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>string deviceId = 2;</code>
+       * <code>string device_id = 1;</code>
        * @param value The deviceId to set.
        * @return This builder for chaining.
        */
@@ -852,7 +725,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>string deviceId = 2;</code>
+       * <code>string device_id = 1;</code>
        * @return This builder for chaining.
        */
       public Builder clearDeviceId() {
@@ -862,7 +735,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>string deviceId = 2;</code>
+       * <code>string device_id = 1;</code>
        * @param value The bytes for deviceId to set.
        * @return This builder for chaining.
        */
@@ -874,6 +747,36 @@ public final class DeviceMessageProto {
   checkByteStringIsUtf8(value);
         
         deviceId_ = value;
+        onChanged();
+        return this;
+      }
+
+      private int dataType_ ;
+      /**
+       * <code>int32 data_type = 2;</code>
+       * @return The dataType.
+       */
+      public int getDataType() {
+        return dataType_;
+      }
+      /**
+       * <code>int32 data_type = 2;</code>
+       * @param value The dataType to set.
+       * @return This builder for chaining.
+       */
+      public Builder setDataType(int value) {
+        
+        dataType_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int32 data_type = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearDataType() {
+        
+        dataType_ = 0;
         onChanged();
         return this;
       }
@@ -891,7 +794,7 @@ public final class DeviceMessageProto {
           org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem.Builder, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItemOrBuilder> contentBuilder_;
 
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public java.util.List<org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem> getContentList() {
         if (contentBuilder_ == null) {
@@ -901,7 +804,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public int getContentCount() {
         if (contentBuilder_ == null) {
@@ -911,7 +814,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem getContent(int index) {
         if (contentBuilder_ == null) {
@@ -921,7 +824,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public Builder setContent(
           int index, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem value) {
@@ -938,7 +841,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public Builder setContent(
           int index, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem.Builder builderForValue) {
@@ -952,7 +855,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public Builder addContent(org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem value) {
         if (contentBuilder_ == null) {
@@ -968,7 +871,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public Builder addContent(
           int index, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem value) {
@@ -985,7 +888,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public Builder addContent(
           org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem.Builder builderForValue) {
@@ -999,7 +902,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public Builder addContent(
           int index, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem.Builder builderForValue) {
@@ -1013,7 +916,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public Builder addAllContent(
           java.lang.Iterable<? extends org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem> values) {
@@ -1028,7 +931,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public Builder clearContent() {
         if (contentBuilder_ == null) {
@@ -1041,7 +944,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public Builder removeContent(int index) {
         if (contentBuilder_ == null) {
@@ -1054,14 +957,14 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem.Builder getContentBuilder(
           int index) {
         return getContentFieldBuilder().getBuilder(index);
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItemOrBuilder getContentOrBuilder(
           int index) {
@@ -1071,7 +974,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public java.util.List<? extends org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItemOrBuilder> 
            getContentOrBuilderList() {
@@ -1082,14 +985,14 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem.Builder addContentBuilder() {
         return getContentFieldBuilder().addBuilder(
             org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem.getDefaultInstance());
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem.Builder addContentBuilder(
           int index) {
@@ -1097,7 +1000,7 @@ public final class DeviceMessageProto {
             index, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem.getDefaultInstance());
       }
       /**
-       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem Content = 3;</code>
+       * <code>repeated .org.jetlinks.community.network.websocket.protocol.ContentItem content = 3;</code>
        */
       public java.util.List<org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ContentItem.Builder> 
            getContentBuilderList() {
@@ -1118,78 +1021,44 @@ public final class DeviceMessageProto {
         return contentBuilder_;
       }
 
-      private java.lang.Object time_ = "";
+      private long time_ ;
       /**
-       * <code>string Time = 4;</code>
+       * <pre>
+       * 优化: 使用int64替代string存储时间戳
+       * </pre>
+       *
+       * <code>int64 time = 4;</code>
        * @return The time.
        */
-      public java.lang.String getTime() {
-        java.lang.Object ref = time_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          time_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
+      public long getTime() {
+        return time_;
       }
       /**
-       * <code>string Time = 4;</code>
-       * @return The bytes for time.
-       */
-      public com.google.protobuf.ByteString
-          getTimeBytes() {
-        java.lang.Object ref = time_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          time_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>string Time = 4;</code>
+       * <pre>
+       * 优化: 使用int64替代string存储时间戳
+       * </pre>
+       *
+       * <code>int64 time = 4;</code>
        * @param value The time to set.
        * @return This builder for chaining.
        */
-      public Builder setTime(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
+      public Builder setTime(long value) {
+        
         time_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>string Time = 4;</code>
+       * <pre>
+       * 优化: 使用int64替代string存储时间戳
+       * </pre>
+       *
+       * <code>int64 time = 4;</code>
        * @return This builder for chaining.
        */
       public Builder clearTime() {
         
-        time_ = getDefaultInstance().getTime();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string Time = 4;</code>
-       * @param value The bytes for time to set.
-       * @return This builder for chaining.
-       */
-      public Builder setTimeBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        time_ = value;
+        time_ = 0L;
         onChanged();
         return this;
       }
@@ -1251,75 +1120,77 @@ public final class DeviceMessageProto {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>string Category = 1;</code>
+     * <code>string category = 1;</code>
      * @return The category.
      */
     java.lang.String getCategory();
     /**
-     * <code>string Category = 1;</code>
+     * <code>string category = 1;</code>
      * @return The bytes for category.
      */
     com.google.protobuf.ByteString
         getCategoryBytes();
 
     /**
-     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
      * @return Whether the result field is set.
      */
     boolean hasResult();
     /**
-     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
      * @return The result.
      */
     org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue getResult();
     /**
-     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
      */
     org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValueOrBuilder getResultOrBuilder();
 
     /**
-     * <code>string Unit = 3;</code>
+     * <code>string unit = 3;</code>
      * @return The unit.
      */
     java.lang.String getUnit();
     /**
-     * <code>string Unit = 3;</code>
+     * <code>string unit = 3;</code>
      * @return The bytes for unit.
      */
     com.google.protobuf.ByteString
         getUnitBytes();
 
     /**
-     * <code>int32 DataType = 4;</code>
-     * @return The dataType.
-     */
-    int getDataType();
-
-    /**
-     * <code>string AlarmValue = 5;</code>
+     * <code>string alarm_value = 4;</code>
      * @return The alarmValue.
      */
     java.lang.String getAlarmValue();
     /**
-     * <code>string AlarmValue = 5;</code>
+     * <code>string alarm_value = 4;</code>
      * @return The bytes for alarmValue.
      */
     com.google.protobuf.ByteString
         getAlarmValueBytes();
 
     /**
-     * <code>string TakeTime = 6;</code>
+     * <pre>
+     * 优化: 使用int64替代string存储时间戳
+     * </pre>
+     *
+     * <code>int64 take_time = 5;</code>
      * @return The takeTime.
      */
-    java.lang.String getTakeTime();
+    long getTakeTime();
+
     /**
-     * <code>string TakeTime = 6;</code>
-     * @return The bytes for takeTime.
+     * <code>int32 sampling_rate = 6;</code>
+     * @return The samplingRate.
      */
-    com.google.protobuf.ByteString
-        getTakeTimeBytes();
+    int getSamplingRate();
   }
   /**
+   * <pre>
+   * 内容项
+   * </pre>
+   *
    * Protobuf type {@code org.jetlinks.community.network.websocket.protocol.ContentItem}
    */
   public  static final class ContentItem extends
@@ -1335,7 +1206,6 @@ public final class DeviceMessageProto {
       category_ = "";
       unit_ = "";
       alarmValue_ = "";
-      takeTime_ = "";
     }
 
     @java.lang.Override
@@ -1393,21 +1263,20 @@ public final class DeviceMessageProto {
               unit_ = s;
               break;
             }
-            case 32: {
-
-              dataType_ = input.readInt32();
-              break;
-            }
-            case 42: {
+            case 34: {
               java.lang.String s = input.readStringRequireUtf8();
 
               alarmValue_ = s;
               break;
             }
-            case 50: {
-              java.lang.String s = input.readStringRequireUtf8();
+            case 40: {
 
-              takeTime_ = s;
+              takeTime_ = input.readInt64();
+              break;
+            }
+            case 48: {
+
+              samplingRate_ = input.readInt32();
               break;
             }
             default: {
@@ -1445,7 +1314,7 @@ public final class DeviceMessageProto {
     public static final int CATEGORY_FIELD_NUMBER = 1;
     private volatile java.lang.Object category_;
     /**
-     * <code>string Category = 1;</code>
+     * <code>string category = 1;</code>
      * @return The category.
      */
     public java.lang.String getCategory() {
@@ -1461,7 +1330,7 @@ public final class DeviceMessageProto {
       }
     }
     /**
-     * <code>string Category = 1;</code>
+     * <code>string category = 1;</code>
      * @return The bytes for category.
      */
     public com.google.protobuf.ByteString
@@ -1481,21 +1350,21 @@ public final class DeviceMessageProto {
     public static final int RESULT_FIELD_NUMBER = 2;
     private org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue result_;
     /**
-     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
      * @return Whether the result field is set.
      */
     public boolean hasResult() {
       return result_ != null;
     }
     /**
-     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
      * @return The result.
      */
     public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue getResult() {
       return result_ == null ? org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue.getDefaultInstance() : result_;
     }
     /**
-     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+     * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
      */
     public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValueOrBuilder getResultOrBuilder() {
       return getResult();
@@ -1504,7 +1373,7 @@ public final class DeviceMessageProto {
     public static final int UNIT_FIELD_NUMBER = 3;
     private volatile java.lang.Object unit_;
     /**
-     * <code>string Unit = 3;</code>
+     * <code>string unit = 3;</code>
      * @return The unit.
      */
     public java.lang.String getUnit() {
@@ -1520,7 +1389,7 @@ public final class DeviceMessageProto {
       }
     }
     /**
-     * <code>string Unit = 3;</code>
+     * <code>string unit = 3;</code>
      * @return The bytes for unit.
      */
     public com.google.protobuf.ByteString
@@ -1537,20 +1406,10 @@ public final class DeviceMessageProto {
       }
     }
 
-    public static final int DATATYPE_FIELD_NUMBER = 4;
-    private int dataType_;
-    /**
-     * <code>int32 DataType = 4;</code>
-     * @return The dataType.
-     */
-    public int getDataType() {
-      return dataType_;
-    }
-
-    public static final int ALARMVALUE_FIELD_NUMBER = 5;
+    public static final int ALARM_VALUE_FIELD_NUMBER = 4;
     private volatile java.lang.Object alarmValue_;
     /**
-     * <code>string AlarmValue = 5;</code>
+     * <code>string alarm_value = 4;</code>
      * @return The alarmValue.
      */
     public java.lang.String getAlarmValue() {
@@ -1566,7 +1425,7 @@ public final class DeviceMessageProto {
       }
     }
     /**
-     * <code>string AlarmValue = 5;</code>
+     * <code>string alarm_value = 4;</code>
      * @return The bytes for alarmValue.
      */
     public com.google.protobuf.ByteString
@@ -1583,40 +1442,28 @@ public final class DeviceMessageProto {
       }
     }
 
-    public static final int TAKETIME_FIELD_NUMBER = 6;
-    private volatile java.lang.Object takeTime_;
+    public static final int TAKE_TIME_FIELD_NUMBER = 5;
+    private long takeTime_;
     /**
-     * <code>string TakeTime = 6;</code>
+     * <pre>
+     * 优化: 使用int64替代string存储时间戳
+     * </pre>
+     *
+     * <code>int64 take_time = 5;</code>
      * @return The takeTime.
      */
-    public java.lang.String getTakeTime() {
-      java.lang.Object ref = takeTime_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        takeTime_ = s;
-        return s;
-      }
+    public long getTakeTime() {
+      return takeTime_;
     }
+
+    public static final int SAMPLING_RATE_FIELD_NUMBER = 6;
+    private int samplingRate_;
     /**
-     * <code>string TakeTime = 6;</code>
-     * @return The bytes for takeTime.
+     * <code>int32 sampling_rate = 6;</code>
+     * @return The samplingRate.
      */
-    public com.google.protobuf.ByteString
-        getTakeTimeBytes() {
-      java.lang.Object ref = takeTime_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        takeTime_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
+    public int getSamplingRate() {
+      return samplingRate_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -1642,14 +1489,14 @@ public final class DeviceMessageProto {
       if (!getUnitBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 3, unit_);
       }
-      if (dataType_ != 0) {
-        output.writeInt32(4, dataType_);
-      }
       if (!getAlarmValueBytes().isEmpty()) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, alarmValue_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, alarmValue_);
       }
-      if (!getTakeTimeBytes().isEmpty()) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 6, takeTime_);
+      if (takeTime_ != 0L) {
+        output.writeInt64(5, takeTime_);
+      }
+      if (samplingRate_ != 0) {
+        output.writeInt32(6, samplingRate_);
       }
       unknownFields.writeTo(output);
     }
@@ -1670,15 +1517,16 @@ public final class DeviceMessageProto {
       if (!getUnitBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, unit_);
       }
-      if (dataType_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(4, dataType_);
-      }
       if (!getAlarmValueBytes().isEmpty()) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, alarmValue_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, alarmValue_);
       }
-      if (!getTakeTimeBytes().isEmpty()) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, takeTime_);
+      if (takeTime_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(5, takeTime_);
+      }
+      if (samplingRate_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(6, samplingRate_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -1704,12 +1552,12 @@ public final class DeviceMessageProto {
       }
       if (!getUnit()
           .equals(other.getUnit())) return false;
-      if (getDataType()
-          != other.getDataType()) return false;
       if (!getAlarmValue()
           .equals(other.getAlarmValue())) return false;
-      if (!getTakeTime()
-          .equals(other.getTakeTime())) return false;
+      if (getTakeTime()
+          != other.getTakeTime()) return false;
+      if (getSamplingRate()
+          != other.getSamplingRate()) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -1729,12 +1577,13 @@ public final class DeviceMessageProto {
       }
       hash = (37 * hash) + UNIT_FIELD_NUMBER;
       hash = (53 * hash) + getUnit().hashCode();
-      hash = (37 * hash) + DATATYPE_FIELD_NUMBER;
-      hash = (53 * hash) + getDataType();
-      hash = (37 * hash) + ALARMVALUE_FIELD_NUMBER;
+      hash = (37 * hash) + ALARM_VALUE_FIELD_NUMBER;
       hash = (53 * hash) + getAlarmValue().hashCode();
-      hash = (37 * hash) + TAKETIME_FIELD_NUMBER;
-      hash = (53 * hash) + getTakeTime().hashCode();
+      hash = (37 * hash) + TAKE_TIME_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getTakeTime());
+      hash = (37 * hash) + SAMPLING_RATE_FIELD_NUMBER;
+      hash = (53 * hash) + getSamplingRate();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -1831,6 +1680,10 @@ public final class DeviceMessageProto {
       return builder;
     }
     /**
+     * <pre>
+     * 内容项
+     * </pre>
+     *
      * Protobuf type {@code org.jetlinks.community.network.websocket.protocol.ContentItem}
      */
     public static final class Builder extends
@@ -1878,11 +1731,11 @@ public final class DeviceMessageProto {
         }
         unit_ = "";
 
-        dataType_ = 0;
-
         alarmValue_ = "";
 
-        takeTime_ = "";
+        takeTime_ = 0L;
+
+        samplingRate_ = 0;
 
         return this;
       }
@@ -1917,9 +1770,9 @@ public final class DeviceMessageProto {
           result.result_ = resultBuilder_.build();
         }
         result.unit_ = unit_;
-        result.dataType_ = dataType_;
         result.alarmValue_ = alarmValue_;
         result.takeTime_ = takeTime_;
+        result.samplingRate_ = samplingRate_;
         onBuilt();
         return result;
       }
@@ -1979,16 +1832,15 @@ public final class DeviceMessageProto {
           unit_ = other.unit_;
           onChanged();
         }
-        if (other.getDataType() != 0) {
-          setDataType(other.getDataType());
-        }
         if (!other.getAlarmValue().isEmpty()) {
           alarmValue_ = other.alarmValue_;
           onChanged();
         }
-        if (!other.getTakeTime().isEmpty()) {
-          takeTime_ = other.takeTime_;
-          onChanged();
+        if (other.getTakeTime() != 0L) {
+          setTakeTime(other.getTakeTime());
+        }
+        if (other.getSamplingRate() != 0) {
+          setSamplingRate(other.getSamplingRate());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -2021,7 +1873,7 @@ public final class DeviceMessageProto {
 
       private java.lang.Object category_ = "";
       /**
-       * <code>string Category = 1;</code>
+       * <code>string category = 1;</code>
        * @return The category.
        */
       public java.lang.String getCategory() {
@@ -2037,7 +1889,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>string Category = 1;</code>
+       * <code>string category = 1;</code>
        * @return The bytes for category.
        */
       public com.google.protobuf.ByteString
@@ -2054,7 +1906,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>string Category = 1;</code>
+       * <code>string category = 1;</code>
        * @param value The category to set.
        * @return This builder for chaining.
        */
@@ -2069,7 +1921,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>string Category = 1;</code>
+       * <code>string category = 1;</code>
        * @return This builder for chaining.
        */
       public Builder clearCategory() {
@@ -2079,7 +1931,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>string Category = 1;</code>
+       * <code>string category = 1;</code>
        * @param value The bytes for category to set.
        * @return This builder for chaining.
        */
@@ -2099,14 +1951,14 @@ public final class DeviceMessageProto {
       private com.google.protobuf.SingleFieldBuilderV3<
           org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue.Builder, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValueOrBuilder> resultBuilder_;
       /**
-       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
        * @return Whether the result field is set.
        */
       public boolean hasResult() {
         return resultBuilder_ != null || result_ != null;
       }
       /**
-       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
        * @return The result.
        */
       public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue getResult() {
@@ -2117,7 +1969,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
        */
       public Builder setResult(org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue value) {
         if (resultBuilder_ == null) {
@@ -2133,7 +1985,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
        */
       public Builder setResult(
           org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue.Builder builderForValue) {
@@ -2147,7 +1999,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
        */
       public Builder mergeResult(org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue value) {
         if (resultBuilder_ == null) {
@@ -2165,7 +2017,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
        */
       public Builder clearResult() {
         if (resultBuilder_ == null) {
@@ -2179,7 +2031,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
        */
       public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue.Builder getResultBuilder() {
         
@@ -2187,7 +2039,7 @@ public final class DeviceMessageProto {
         return getResultFieldBuilder().getBuilder();
       }
       /**
-       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
        */
       public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValueOrBuilder getResultOrBuilder() {
         if (resultBuilder_ != null) {
@@ -2198,7 +2050,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue Result = 2;</code>
+       * <code>.org.jetlinks.community.network.websocket.protocol.ResultValue result = 2;</code>
        */
       private com.google.protobuf.SingleFieldBuilderV3<
           org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue.Builder, org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValueOrBuilder> 
@@ -2216,7 +2068,7 @@ public final class DeviceMessageProto {
 
       private java.lang.Object unit_ = "";
       /**
-       * <code>string Unit = 3;</code>
+       * <code>string unit = 3;</code>
        * @return The unit.
        */
       public java.lang.String getUnit() {
@@ -2232,7 +2084,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>string Unit = 3;</code>
+       * <code>string unit = 3;</code>
        * @return The bytes for unit.
        */
       public com.google.protobuf.ByteString
@@ -2249,7 +2101,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>string Unit = 3;</code>
+       * <code>string unit = 3;</code>
        * @param value The unit to set.
        * @return This builder for chaining.
        */
@@ -2264,7 +2116,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>string Unit = 3;</code>
+       * <code>string unit = 3;</code>
        * @return This builder for chaining.
        */
       public Builder clearUnit() {
@@ -2274,7 +2126,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>string Unit = 3;</code>
+       * <code>string unit = 3;</code>
        * @param value The bytes for unit to set.
        * @return This builder for chaining.
        */
@@ -2290,39 +2142,9 @@ public final class DeviceMessageProto {
         return this;
       }
 
-      private int dataType_ ;
-      /**
-       * <code>int32 DataType = 4;</code>
-       * @return The dataType.
-       */
-      public int getDataType() {
-        return dataType_;
-      }
-      /**
-       * <code>int32 DataType = 4;</code>
-       * @param value The dataType to set.
-       * @return This builder for chaining.
-       */
-      public Builder setDataType(int value) {
-        
-        dataType_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>int32 DataType = 4;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearDataType() {
-        
-        dataType_ = 0;
-        onChanged();
-        return this;
-      }
-
       private java.lang.Object alarmValue_ = "";
       /**
-       * <code>string AlarmValue = 5;</code>
+       * <code>string alarm_value = 4;</code>
        * @return The alarmValue.
        */
       public java.lang.String getAlarmValue() {
@@ -2338,7 +2160,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>string AlarmValue = 5;</code>
+       * <code>string alarm_value = 4;</code>
        * @return The bytes for alarmValue.
        */
       public com.google.protobuf.ByteString
@@ -2355,7 +2177,7 @@ public final class DeviceMessageProto {
         }
       }
       /**
-       * <code>string AlarmValue = 5;</code>
+       * <code>string alarm_value = 4;</code>
        * @param value The alarmValue to set.
        * @return This builder for chaining.
        */
@@ -2370,7 +2192,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>string AlarmValue = 5;</code>
+       * <code>string alarm_value = 4;</code>
        * @return This builder for chaining.
        */
       public Builder clearAlarmValue() {
@@ -2380,7 +2202,7 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <code>string AlarmValue = 5;</code>
+       * <code>string alarm_value = 4;</code>
        * @param value The bytes for alarmValue to set.
        * @return This builder for chaining.
        */
@@ -2396,78 +2218,74 @@ public final class DeviceMessageProto {
         return this;
       }
 
-      private java.lang.Object takeTime_ = "";
+      private long takeTime_ ;
       /**
-       * <code>string TakeTime = 6;</code>
+       * <pre>
+       * 优化: 使用int64替代string存储时间戳
+       * </pre>
+       *
+       * <code>int64 take_time = 5;</code>
        * @return The takeTime.
        */
-      public java.lang.String getTakeTime() {
-        java.lang.Object ref = takeTime_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          takeTime_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
+      public long getTakeTime() {
+        return takeTime_;
       }
       /**
-       * <code>string TakeTime = 6;</code>
-       * @return The bytes for takeTime.
-       */
-      public com.google.protobuf.ByteString
-          getTakeTimeBytes() {
-        java.lang.Object ref = takeTime_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          takeTime_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>string TakeTime = 6;</code>
+       * <pre>
+       * 优化: 使用int64替代string存储时间戳
+       * </pre>
+       *
+       * <code>int64 take_time = 5;</code>
        * @param value The takeTime to set.
        * @return This builder for chaining.
        */
-      public Builder setTakeTime(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
+      public Builder setTakeTime(long value) {
+        
         takeTime_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>string TakeTime = 6;</code>
+       * <pre>
+       * 优化: 使用int64替代string存储时间戳
+       * </pre>
+       *
+       * <code>int64 take_time = 5;</code>
        * @return This builder for chaining.
        */
       public Builder clearTakeTime() {
         
-        takeTime_ = getDefaultInstance().getTakeTime();
+        takeTime_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private int samplingRate_ ;
+      /**
+       * <code>int32 sampling_rate = 6;</code>
+       * @return The samplingRate.
+       */
+      public int getSamplingRate() {
+        return samplingRate_;
+      }
+      /**
+       * <code>int32 sampling_rate = 6;</code>
+       * @param value The samplingRate to set.
+       * @return This builder for chaining.
+       */
+      public Builder setSamplingRate(int value) {
+        
+        samplingRate_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>string TakeTime = 6;</code>
-       * @param value The bytes for takeTime to set.
+       * <code>int32 sampling_rate = 6;</code>
        * @return This builder for chaining.
        */
-      public Builder setTakeTimeBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
+      public Builder clearSamplingRate() {
         
-        takeTime_ = value;
+        samplingRate_ = 0;
         onChanged();
         return this;
       }
@@ -2555,9 +2373,33 @@ public final class DeviceMessageProto {
      */
     org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.WaveformOrBuilder getWaveformValueOrBuilder();
 
+    /**
+     * <pre>
+     * 新增: 支持double类型
+     * </pre>
+     *
+     * <code>double double_value = 3;</code>
+     * @return The doubleValue.
+     */
+    double getDoubleValue();
+
+    /**
+     * <pre>
+     * 新增: 支持bool类型
+     * </pre>
+     *
+     * <code>bool bool_value = 4;</code>
+     * @return The boolValue.
+     */
+    boolean getBoolValue();
+
     public org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.ResultValue.ValueCase getValueCase();
   }
   /**
+   * <pre>
+   * 结果值
+   * </pre>
+   *
    * Protobuf type {@code org.jetlinks.community.network.websocket.protocol.ResultValue}
    */
   public  static final class ResultValue extends
@@ -2622,6 +2464,16 @@ public final class DeviceMessageProto {
               valueCase_ = 2;
               break;
             }
+            case 25: {
+              valueCase_ = 3;
+              value_ = input.readDouble();
+              break;
+            }
+            case 32: {
+              valueCase_ = 4;
+              value_ = input.readBool();
+              break;
+            }
             default: {
               if (!parseUnknownField(
                   input, unknownFields, extensionRegistry, tag)) {
@@ -2661,6 +2513,8 @@ public final class DeviceMessageProto {
             com.google.protobuf.AbstractMessage.InternalOneOfEnum {
       STRING_VALUE(1),
       WAVEFORM_VALUE(2),
+      DOUBLE_VALUE(3),
+      BOOL_VALUE(4),
       VALUE_NOT_SET(0);
       private final int value;
       private ValueCase(int value) {
@@ -2680,6 +2534,8 @@ public final class DeviceMessageProto {
         switch (value) {
           case 1: return STRING_VALUE;
           case 2: return WAVEFORM_VALUE;
+          case 3: return DOUBLE_VALUE;
+          case 4: return BOOL_VALUE;
           case 0: return VALUE_NOT_SET;
           default: return null;
         }
@@ -2768,6 +2624,38 @@ public final class DeviceMessageProto {
       return org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.Waveform.getDefaultInstance();
     }
 
+    public static final int DOUBLE_VALUE_FIELD_NUMBER = 3;
+    /**
+     * <pre>
+     * 新增: 支持double类型
+     * </pre>
+     *
+     * <code>double double_value = 3;</code>
+     * @return The doubleValue.
+     */
+    public double getDoubleValue() {
+      if (valueCase_ == 3) {
+        return (java.lang.Double) value_;
+      }
+      return 0D;
+    }
+
+    public static final int BOOL_VALUE_FIELD_NUMBER = 4;
+    /**
+     * <pre>
+     * 新增: 支持bool类型
+     * </pre>
+     *
+     * <code>bool bool_value = 4;</code>
+     * @return The boolValue.
+     */
+    public boolean getBoolValue() {
+      if (valueCase_ == 4) {
+        return (java.lang.Boolean) value_;
+      }
+      return false;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -2788,6 +2676,14 @@ public final class DeviceMessageProto {
       if (valueCase_ == 2) {
         output.writeMessage(2, (org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.Waveform) value_);
       }
+      if (valueCase_ == 3) {
+        output.writeDouble(
+            3, (double)((java.lang.Double) value_));
+      }
+      if (valueCase_ == 4) {
+        output.writeBool(
+            4, (boolean)((java.lang.Boolean) value_));
+      }
       unknownFields.writeTo(output);
     }
 
@@ -2803,6 +2699,16 @@ public final class DeviceMessageProto {
       if (valueCase_ == 2) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(2, (org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.Waveform) value_);
+      }
+      if (valueCase_ == 3) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(
+              3, (double)((java.lang.Double) value_));
+      }
+      if (valueCase_ == 4) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(
+              4, (boolean)((java.lang.Boolean) value_));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -2829,6 +2735,15 @@ public final class DeviceMessageProto {
           if (!getWaveformValue()
               .equals(other.getWaveformValue())) return false;
           break;
+        case 3:
+          if (java.lang.Double.doubleToLongBits(getDoubleValue())
+              != java.lang.Double.doubleToLongBits(
+                  other.getDoubleValue())) return false;
+          break;
+        case 4:
+          if (getBoolValue()
+              != other.getBoolValue()) return false;
+          break;
         case 0:
         default:
       }
@@ -2851,6 +2766,16 @@ public final class DeviceMessageProto {
         case 2:
           hash = (37 * hash) + WAVEFORM_VALUE_FIELD_NUMBER;
           hash = (53 * hash) + getWaveformValue().hashCode();
+          break;
+        case 3:
+          hash = (37 * hash) + DOUBLE_VALUE_FIELD_NUMBER;
+          hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+              java.lang.Double.doubleToLongBits(getDoubleValue()));
+          break;
+        case 4:
+          hash = (37 * hash) + BOOL_VALUE_FIELD_NUMBER;
+          hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+              getBoolValue());
           break;
         case 0:
         default:
@@ -2951,6 +2876,10 @@ public final class DeviceMessageProto {
       return builder;
     }
     /**
+     * <pre>
+     * 结果值
+     * </pre>
+     *
      * Protobuf type {@code org.jetlinks.community.network.websocket.protocol.ResultValue}
      */
     public static final class Builder extends
@@ -3026,6 +2955,12 @@ public final class DeviceMessageProto {
             result.value_ = waveformValueBuilder_.build();
           }
         }
+        if (valueCase_ == 3) {
+          result.value_ = value_;
+        }
+        if (valueCase_ == 4) {
+          result.value_ = value_;
+        }
         result.valueCase_ = valueCase_;
         onBuilt();
         return result;
@@ -3084,6 +3019,14 @@ public final class DeviceMessageProto {
           }
           case WAVEFORM_VALUE: {
             mergeWaveformValue(other.getWaveformValue());
+            break;
+          }
+          case DOUBLE_VALUE: {
+            setDoubleValue(other.getDoubleValue());
+            break;
+          }
+          case BOOL_VALUE: {
+            setBoolValue(other.getBoolValue());
             break;
           }
           case VALUE_NOT_SET: {
@@ -3358,6 +3301,98 @@ public final class DeviceMessageProto {
         onChanged();;
         return waveformValueBuilder_;
       }
+
+      /**
+       * <pre>
+       * 新增: 支持double类型
+       * </pre>
+       *
+       * <code>double double_value = 3;</code>
+       * @return The doubleValue.
+       */
+      public double getDoubleValue() {
+        if (valueCase_ == 3) {
+          return (java.lang.Double) value_;
+        }
+        return 0D;
+      }
+      /**
+       * <pre>
+       * 新增: 支持double类型
+       * </pre>
+       *
+       * <code>double double_value = 3;</code>
+       * @param value The doubleValue to set.
+       * @return This builder for chaining.
+       */
+      public Builder setDoubleValue(double value) {
+        valueCase_ = 3;
+        value_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 新增: 支持double类型
+       * </pre>
+       *
+       * <code>double double_value = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearDoubleValue() {
+        if (valueCase_ == 3) {
+          valueCase_ = 0;
+          value_ = null;
+          onChanged();
+        }
+        return this;
+      }
+
+      /**
+       * <pre>
+       * 新增: 支持bool类型
+       * </pre>
+       *
+       * <code>bool bool_value = 4;</code>
+       * @return The boolValue.
+       */
+      public boolean getBoolValue() {
+        if (valueCase_ == 4) {
+          return (java.lang.Boolean) value_;
+        }
+        return false;
+      }
+      /**
+       * <pre>
+       * 新增: 支持bool类型
+       * </pre>
+       *
+       * <code>bool bool_value = 4;</code>
+       * @param value The boolValue to set.
+       * @return This builder for chaining.
+       */
+      public Builder setBoolValue(boolean value) {
+        valueCase_ = 4;
+        value_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 新增: 支持bool类型
+       * </pre>
+       *
+       * <code>bool bool_value = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearBoolValue() {
+        if (valueCase_ == 4) {
+          valueCase_ = 0;
+          value_ = null;
+          onChanged();
+        }
+        return this;
+      }
       @java.lang.Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -3433,6 +3468,10 @@ public final class DeviceMessageProto {
     int getValues(int index);
   }
   /**
+   * <pre>
+   * 波形数据
+   * </pre>
+   *
    * Protobuf type {@code org.jetlinks.community.network.websocket.protocol.Waveform}
    */
   public  static final class Waveform extends
@@ -3735,6 +3774,10 @@ public final class DeviceMessageProto {
       return builder;
     }
     /**
+     * <pre>
+     * 波形数据
+     * </pre>
+     *
      * Protobuf type {@code org.jetlinks.community.network.websocket.protocol.Waveform}
      */
     public static final class Builder extends
@@ -4056,19 +4099,21 @@ public final class DeviceMessageProto {
     java.lang.String[] descriptorData = {
       "\n\023DeviceMessage.proto\0221org.jetlinks.comm" +
       "unity.network.websocket.protocol\"\221\001\n\nDev" +
-      "iceData\022\022\n\ndeviceName\030\001 \001(\t\022\020\n\010deviceId\030" +
-      "\002 \001(\t\022O\n\007Content\030\003 \003(\0132>.org.jetlinks.co" +
+      "iceData\022\021\n\tdevice_id\030\001 \001(\t\022\021\n\tdata_type\030" +
+      "\002 \001(\005\022O\n\007content\030\003 \003(\0132>.org.jetlinks.co" +
       "mmunity.network.websocket.protocol.Conte" +
-      "ntItem\022\014\n\004Time\030\004 \001(\t\"\265\001\n\013ContentItem\022\020\n\010" +
-      "Category\030\001 \001(\t\022N\n\006Result\030\002 \001(\0132>.org.jet" +
+      "ntItem\022\014\n\004time\030\004 \001(\003\"\274\001\n\013ContentItem\022\020\n\010" +
+      "category\030\001 \001(\t\022N\n\006result\030\002 \001(\0132>.org.jet" +
       "links.community.network.websocket.protoc" +
-      "ol.ResultValue\022\014\n\004Unit\030\003 \001(\t\022\020\n\010DataType" +
-      "\030\004 \001(\005\022\022\n\nAlarmValue\030\005 \001(\t\022\020\n\010TakeTime\030\006" +
-      " \001(\t\"\205\001\n\013ResultValue\022\026\n\014string_value\030\001 \001" +
-      "(\tH\000\022U\n\016waveform_value\030\002 \001(\0132;.org.jetli" +
-      "nks.community.network.websocket.protocol" +
-      ".WaveformH\000B\007\n\005value\"\032\n\010Waveform\022\016\n\006valu" +
-      "es\030\001 \003(\005B\024B\022DeviceMessageProtob\006proto3"
+      "ol.ResultValue\022\014\n\004unit\030\003 \001(\t\022\023\n\013alarm_va" +
+      "lue\030\004 \001(\t\022\021\n\ttake_time\030\005 \001(\003\022\025\n\rsampling" +
+      "_rate\030\006 \001(\005\"\263\001\n\013ResultValue\022\026\n\014string_va" +
+      "lue\030\001 \001(\tH\000\022U\n\016waveform_value\030\002 \001(\0132;.or" +
+      "g.jetlinks.community.network.websocket.p" +
+      "rotocol.WaveformH\000\022\026\n\014double_value\030\003 \001(\001" +
+      "H\000\022\024\n\nbool_value\030\004 \001(\010H\000B\007\n\005value\"\032\n\010Wav" +
+      "eform\022\016\n\006values\030\001 \003(\005B\024B\022DeviceMessagePr" +
+      "otob\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -4079,19 +4124,19 @@ public final class DeviceMessageProto {
     internal_static_org_jetlinks_community_network_websocket_protocol_DeviceData_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_org_jetlinks_community_network_websocket_protocol_DeviceData_descriptor,
-        new java.lang.String[] { "DeviceName", "DeviceId", "Content", "Time", });
+        new java.lang.String[] { "DeviceId", "DataType", "Content", "Time", });
     internal_static_org_jetlinks_community_network_websocket_protocol_ContentItem_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_org_jetlinks_community_network_websocket_protocol_ContentItem_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_org_jetlinks_community_network_websocket_protocol_ContentItem_descriptor,
-        new java.lang.String[] { "Category", "Result", "Unit", "DataType", "AlarmValue", "TakeTime", });
+        new java.lang.String[] { "Category", "Result", "Unit", "AlarmValue", "TakeTime", "SamplingRate", });
     internal_static_org_jetlinks_community_network_websocket_protocol_ResultValue_descriptor =
       getDescriptor().getMessageTypes().get(2);
     internal_static_org_jetlinks_community_network_websocket_protocol_ResultValue_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_org_jetlinks_community_network_websocket_protocol_ResultValue_descriptor,
-        new java.lang.String[] { "StringValue", "WaveformValue", "Value", });
+        new java.lang.String[] { "StringValue", "WaveformValue", "DoubleValue", "BoolValue", "Value", });
     internal_static_org_jetlinks_community_network_websocket_protocol_Waveform_descriptor =
       getDescriptor().getMessageTypes().get(3);
     internal_static_org_jetlinks_community_network_websocket_protocol_Waveform_fieldAccessorTable = new

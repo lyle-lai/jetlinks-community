@@ -1,0 +1,21 @@
+package com.lyle;
+
+public enum PayloadDataType {
+    PROPERTY(0),
+    WAVEFORM(1);
+
+    private final int value;
+
+    PayloadDataType(int value) {
+        this.value = value;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(this.value);
+    }
+}

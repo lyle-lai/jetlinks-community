@@ -148,6 +148,9 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
             ORU_R01 oruMessage = (ORU_R01) message;
             List<ORU_R01_PATIENT_RESULT> patientResults = oruMessage.getPATIENT_RESULTAll();
             Map<String, Object> properties = new HashMap<>();
+            Map<String, Long> sourceTimes = new HashMap<>();
+
+            long currentTimeMillis = System.currentTimeMillis();
 
             for (ORU_R01_PATIENT_RESULT patientResult : patientResults) {
                 List<ORU_R01_ORDER_OBSERVATION> orderObservations = patientResult.getORDER_OBSERVATIONAll();
@@ -169,6 +172,7 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
 
                         if (paramName != null && paramValue != null) {
                             properties.put(paramName, paramValue);
+                            sourceTimes.put(paramName,currentTimeMillis);
                         }
                     }
                 }
@@ -178,6 +182,13 @@ public class TcpDeviceMessageCodec extends BlockingDeviceMessageCodec {
             // 设置设备id
             report.setDeviceId(Optional.ofNullable(context.getDevice()).map(BlockingDeviceOperator::getDeviceId).orElse(deviceId));
             report.setProperties(properties);
+
+            // 设置时间
+            report.setTimestamp(currentTimeMillis);
+            report.setPropertySourceTimes(sourceTimes);
+
+            // 设置消息类型: 0 表示属性; 1 表示波形
+            report.addHeader("dataType", PayloadDataType.PROPERTY.getValue());
 
             logger.info("HL7 解析成功, deviceId={}, properties={}", report.getDeviceId(), properties);
 

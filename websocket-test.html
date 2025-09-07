@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>JetLinks WebSocket Test (New)</title>
+    <title>JetLinks WebSocket Test (New & Improved)</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; }
         .panel { padding: 15px; box-sizing: border-box; }
-        .left-panel { width: 400px; border-right: 1px solid #ccc; display: flex; flex-direction: column; }
+        .left-panel { width: 400px; border-right: 1px solid #ccc; display: flex; flex-direction: column; overflow-y: auto; }
         .right-panel { flex-grow: 1; display: flex; flex-direction: column; }
         .input-group { margin-bottom: 12px; }
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
@@ -15,10 +15,11 @@
         .button-group { margin-top: 15px; }
         button { padding: 10px 15px; margin-right: 10px; cursor: pointer; border-radius: 4px; border: 1px solid #666; background-color: #f0f0f0; }
         button:disabled { cursor: not-allowed; background-color: #e0e0e0; }
-        .logs { flex-grow: 1; display: flex; flex-direction: column; margin-top: 15px; border: 1px solid #ccc; border-radius: 4px; overflow: hidden;}
+        .logs { flex-grow: 1; display: flex; flex-direction: column; margin-top: 15px; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; min-height: 150px; }
+        .logs:first-child { margin-top: 0; }
         .log-header { padding: 8px; background-color: #f1f1f1; border-bottom: 1px solid #ccc; font-weight: bold; }
-        .log-content { flex-grow: 1; padding: 10px; background-color: #f9f9f9; overflow-y: auto; font-family: monospace; white-space: pre-wrap; }
-        .log-content p { margin: 0 0 5px 0; padding: 0; border-bottom: 1px solid #eee; }
+        .log-content { flex-grow: 1; padding: 10px; background-color: #f9f9f9; overflow-y: auto; font-family: monospace; white-space: pre-wrap; word-break: break-all; }
+        .log-content p { margin: 0 0 5px 0; padding: 5px; border-bottom: 1px solid #eee; }
         .log-content .sent { color: blue; }
         .log-content .received { color: green; }
         .log-content .error { color: red; }
@@ -82,9 +83,14 @@ device2</textarea>
         <div class="log-header">Received Data (Hex)</div>
         <div id="data" class="log-content"></div>
     </div>
+    <div class="logs">
+        <div class="log-header">Decoded Data (JSON)</div>
+        <div id="decodedData" class="log-content"></div>
+    </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.5/dist/protobuf.min.js"></script>
 <script>
     const wsUrlInput = document.getElementById('wsUrl');
     const appIdInput = document.getElementById('appId');
@@ -99,9 +105,42 @@ device2</textarea>
     const unsubscribeBtn = document.getElementById('unsubscribeBtn');
     const messagesDiv = document.getElementById('messages');
     const dataDiv = document.getElementById('data');
+    const decodedDataDiv = document.getElementById('decodedData');
     const statusSpan = document.getElementById('status');
 
     let websocket = null;
+    let DeviceDataProto = null;
+
+    const protoDefinition = `
+    syntax = "proto3";
+    package org.jetlinks.community.network.websocket.protocol;
+    option java_outer_classname = "DeviceMessageProto";
+    message DeviceData {
+        string device_id = 1;
+        int32 data_type = 2;
+        repeated ContentItem content = 3;
+        int64 time = 4;
+    }
+    message ContentItem {
+        string category = 1;
+        ResultValue result = 2;
+        string unit = 3;
+        string alarm_value = 4;
+        int64 take_time = 5;
+        int32 sampling_rate = 6;
+    }
+    message ResultValue {
+        oneof value {
+            string string_value = 1;
+            Waveform waveform_value = 2;
+            double double_value = 3;
+            bool bool_value = 4;
+        }
+    }
+    message Waveform {
+        repeated int32 values = 1;
+    }
+    `;
 
     function log(message, type = 'info') {
         const p = document.createElement('p');
@@ -119,10 +158,28 @@ device2</textarea>
         dataDiv.scrollTop = dataDiv.scrollHeight;
     }
 
+    function logDecodedData(jsonString) {
+        const p = document.createElement('p');
+        p.className = 'received';
+        p.textContent = `[${new Date().toLocaleTimeString()}]\n${jsonString}`;
+        decodedDataDiv.appendChild(p);
+        decodedDataDiv.scrollTop = decodedDataDiv.scrollHeight;
+    }
+
     function setStatus(text, className) {
         statusSpan.textContent = text;
         statusSpan.className = className;
     }
+
+    try {
+        const root = protobuf.parse(protoDefinition).root;
+        DeviceDataProto = root.lookupType("org.jetlinks.community.network.websocket.protocol.DeviceData");
+        log('Protobuf schema parsed successfully.', 'info');
+    } catch (e) {
+        log(`Failed to parse Protobuf schema: ${e.message}`, 'error');
+        console.error(e);
+    }
+
 
     function generateNonce(length = 16) {
         let result = '';
@@ -133,7 +190,6 @@ device2</textarea>
         return result;
     }
 
-    // Restored original signature function
     function calculateSignature(appKey, appSecret, timestamp, nonce, requestPath, queryParams) {
         let queryString = Object.keys(queryParams)
             .sort()
@@ -170,13 +226,8 @@ device2</textarea>
 
         const timestamp = Math.floor(Date.now() / 1000);
         const nonce = generateNonce();
-
-        // The request path for signature calculation should not include query params
         const requestPath = new URL(url.replace(/^ws/, 'http')).pathname;
-
-        // The query parameters for signature calculation should be empty for this WebSocket handshake
         const queryParams = {};
-
         const signature = calculateSignature(appKey, appSecret, timestamp, nonce, requestPath, queryParams);
 
         log('Connecting to WebSocket...', 'info');
@@ -202,12 +253,39 @@ device2</textarea>
             if (event.data instanceof Blob) {
                 const reader = new FileReader();
                 reader.onload = function() {
-                    const hexString = arrayBufferToHex(this.result);
+                    const buffer = this.result;
+                    // Log raw hex data
+                    const hexString = arrayBufferToHex(buffer);
                     logData(hexString);
+
+                    // Decode and log protobuf data
+                    if (DeviceDataProto) {
+                        try {
+                            const uint8Array = new Uint8Array(buffer);
+                            const decodedMessage = DeviceDataProto.decode(uint8Array);
+                            const messageObject = DeviceDataProto.toObject(decodedMessage, {
+                                longs: String, // Convert Longs to string for display
+                                enums: String,
+                                bytes: String,
+                            });
+                            logDecodedData(JSON.stringify(messageObject, null, 2));
+                        } catch (e) {
+                            logDecodedData(`Error decoding protobuf: ${e.message}`);
+                            console.error('Protobuf decoding error:', e);
+                        }
+                    } else {
+                        logDecodedData('Protobuf schema not loaded, cannot decode message.');
+                    }
                 };
                 reader.readAsArrayBuffer(event.data);
             } else {
                 log(`Received Text: ${event.data}`, 'received');
+                 try {
+                    const json = JSON.parse(event.data);
+                    logDecodedData(JSON.stringify(json, null, 2));
+                } catch(e) {
+                    // Not a JSON string, do nothing special
+                }
             }
         };
 
@@ -238,7 +316,7 @@ device2</textarea>
             log('WebSocket is not connected.', 'error');
             return;
         }
-        const deviceIds = deviceIdsInput.value.split(/[\s,]+/).filter(id => id.trim() !== '');
+        const deviceIds = deviceIdsInput.value.split(/["\s,"]+/).filter(id => id.trim() !== '');
         if (deviceIds.length === 0) {
             log('Please enter at least one Device ID.', 'error');
             return;

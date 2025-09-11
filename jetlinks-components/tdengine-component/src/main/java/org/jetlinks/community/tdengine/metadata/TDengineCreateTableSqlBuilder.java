@@ -7,6 +7,7 @@ import org.hswebframework.ezorm.rdb.metadata.RDBColumnMetadata;
 import org.hswebframework.ezorm.rdb.metadata.RDBTableMetadata;
 import org.hswebframework.ezorm.rdb.operator.builder.fragments.PrepareSqlFragments;
 import org.hswebframework.ezorm.rdb.operator.builder.fragments.ddl.CreateTableSqlBuilder;
+import org.hswebframework.utils.StringUtils;
 import org.jetlinks.community.tdengine.TDengineConstants;
 
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ public class TDengineCreateTableSqlBuilder implements CreateTableSqlBuilder {
         PrepareSqlFragments sql = PrepareSqlFragments.of();
 
         List<String> columns = new ArrayList<>(table.getColumns().size());
-        sql.addSql("CREATE STABLE IF NOT EXISTS", table.getFullName(), "(")
+        sql.addSql("CREATE STABLE IF NOT EXISTS", table.getName(), "(")
             .addSql("_ts timestamp");
 
 
@@ -36,9 +37,10 @@ public class TDengineCreateTableSqlBuilder implements CreateTableSqlBuilder {
                 continue;
             }
             sql
-                .addSql(",")
-                .addSql(column.getQuoteName())
-                .addSql(column.getDataType());
+                .addSql(",`")
+                .addSql(column.getName())
+                .addSql("`")
+                .addSql(column.getType().getName());
 
         }
         sql.addSql(")");
@@ -54,6 +56,11 @@ public class TDengineCreateTableSqlBuilder implements CreateTableSqlBuilder {
                     .addSql(tag.getDataType());
             }
             sql.addSql(")");
+        }
+        // 添加TTL支持
+        String ttl = table.getAlias();
+        if (!StringUtils.isNullOrEmpty(ttl)) {
+            sql.addSql("TTL " + ttl);
         }
         return sql.toRequest();
     }

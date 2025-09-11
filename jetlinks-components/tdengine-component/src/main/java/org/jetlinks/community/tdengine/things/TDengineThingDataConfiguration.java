@@ -39,4 +39,10 @@ public class TDengineThingDataConfiguration {
         return new TDengineRowModeStrategy(registry, operations);
     }
 
+    @Bean
+    public HotColdTDengineStrategy hotColdTDengineStrategy(ThingsRegistry registry,
+                                                         TDengineThingDataHelper operations) {
+        return new HotColdTDengineStrategy(registry, operations);
+    }
+
 }

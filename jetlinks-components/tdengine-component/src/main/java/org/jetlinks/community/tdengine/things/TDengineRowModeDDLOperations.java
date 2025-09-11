@@ -10,7 +10,7 @@ import java.util.List;
 
 class TDengineRowModeDDLOperations extends RowModeDDLOperationsBase {
 
-    private final TDengineThingDataHelper helper;
+    protected final TDengineThingDataHelper helper;
 
     public TDengineRowModeDDLOperations(String thingType,
                                         String templateId,

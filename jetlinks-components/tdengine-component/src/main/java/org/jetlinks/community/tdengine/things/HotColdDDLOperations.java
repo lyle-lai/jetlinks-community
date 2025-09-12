@@ -4,7 +4,10 @@ import org.hswebframework.ezorm.rdb.executor.wrapper.ResultWrappers;
 import org.hswebframework.ezorm.rdb.metadata.RDBColumnMetadata;
 import org.hswebframework.ezorm.rdb.metadata.RDBTableMetadata;
 import org.hswebframework.ezorm.rdb.operator.builder.fragments.ddl.CreateTableSqlBuilder;
+import org.jetlinks.community.tdengine.TDengineConstants;
+import org.jetlinks.community.things.data.ThingsDataConstants;
 import org.jetlinks.core.metadata.PropertyMetadata;
+import org.jetlinks.core.metadata.SimplePropertyMetadata;
 import org.jetlinks.core.metadata.types.*;
 import org.jetlinks.community.tdengine.metadata.TDengineSchema;
 import org.jetlinks.community.things.data.operations.DataSettings;
@@ -15,10 +18,11 @@ import java.sql.JDBCType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 class HotColdDDLOperations extends TDengineColumnModeDDLOperations {
 
-    private final long hotDataTtl = 86400; // 默认高频数据保留一天 (in seconds)
+    private final long hotDataTtl = 15; // 默认高频数据保留15天
 
     public HotColdDDLOperations(String thingType,
                                 String templateId,
@@ -35,6 +39,11 @@ class HotColdDDLOperations extends TDengineColumnModeDDLOperations {
             List<PropertyMetadata> hotProperties = new ArrayList<>();
             List<PropertyMetadata> coldProperties = new ArrayList<>();
             for (PropertyMetadata property : properties) {
+                if (property instanceof SimplePropertyMetadata){
+                    hotProperties.add(property);
+                    coldProperties.add(property);
+                }
+
                 if (property.getExpands() != null && "high".equals(property.getExpands().getOrDefault("frequency","low"))) {
                     hotProperties.add(property);
                 } else {
@@ -71,10 +80,27 @@ class HotColdDDLOperations extends TDengineColumnModeDDLOperations {
             org.hswebframework.ezorm.rdb.metadata.DataType rdbType = convertToRDBType(property.getValueType());
             if (rdbType != null) {
                 column.setType(rdbType);
+                // array, object , string , geo 都转为nchar
+                if (rdbType.getSqlType() == JDBCType.ARRAY || rdbType.getSqlType() == JDBCType.NCHAR) {
+                    // 从jetlinks的物模型定义中获取字符长度
+
+                    int len = rdbType.getSqlType() == JDBCType.ARRAY ? 2048 : 255;
+                    Object maxLength = property.getExpands() == null ? len :property.getExpands().getOrDefault("maxLength",len);
+                    if (maxLength instanceof Number) {
+                        len = ((Number) maxLength).intValue();
+                    } else if (maxLength != null) {
+                        try {
+                            len = Integer.parseInt(String.valueOf(maxLength));
+                        } catch (NumberFormatException ignore) {
+                        }
+                    }
+                    column.setLength(len);
+                    column.setType(org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.NCHAR, String.class));
+                }
             }
 
-            if ("property".equals(property.getId()) || super.metricBuilder.getThingIdProperty().equals(property.getId())) {
-                column.setProperty("tag", true);
+            if (Objects.equals(metricBuilder.getThingIdProperty(), property.getId())) {
+                column.setProperty(TDengineConstants.COLUMN_IS_TAG, true);
             }
             table.addColumn(column);
         }
@@ -109,8 +135,9 @@ class HotColdDDLOperations extends TDengineColumnModeDDLOperations {
                 return org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.BOOLEAN, Boolean.class);
             case DateTimeType.ID:
                 return org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.TIMESTAMP, Date.class);
-            case ObjectType.ID:
             case ArrayType.ID:
+                return org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.ARRAY, String.class);
+            case ObjectType.ID:
             case StringType.ID:
             default:
                 // TDengine 推荐使用 NCHAR 存储字符串

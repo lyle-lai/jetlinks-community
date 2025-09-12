@@ -22,7 +22,6 @@ public class TDengineCreateTableSqlBuilder implements CreateTableSqlBuilder {
     public SqlRequest build(RDBTableMetadata table) {
         PrepareSqlFragments sql = PrepareSqlFragments.of();
 
-        List<String> columns = new ArrayList<>(table.getColumns().size());
         sql.addSql("CREATE STABLE IF NOT EXISTS", table.getName(), "(")
             .addSql("_ts timestamp");
 
@@ -37,30 +36,34 @@ public class TDengineCreateTableSqlBuilder implements CreateTableSqlBuilder {
                 continue;
             }
             sql
-                .addSql(",`")
-                .addSql(column.getName())
-                .addSql("`")
+                .addSql(",`" + column.getName() + "`")
                 .addSql(column.getType().getName());
+            if (column.getType().getSqlType() == java.sql.JDBCType.NCHAR && column.getLength() > 0) {
+                sql.addSql("(" + column.getLength() + ")");
+            }
 
         }
         sql.addSql(")");
-        if(!tags.isEmpty()){
+        if (!tags.isEmpty()) {
             sql.addSql("TAGS (");
-            int index= 0 ;
+            int index = 0;
             for (RDBColumnMetadata tag : tags) {
-                if(index++>0){
+                if (index++ > 0) {
                     sql.addSql(",");
                 }
                 sql
-                    .addSql(tag.getQuoteName())
-                    .addSql(tag.getDataType());
+                    .addSql(tag.getName())
+                    .addSql(tag.getType().getName());
+                if (tag.getType().getSqlType() == java.sql.JDBCType.NCHAR && tag.getLength() > 0) {
+                    sql.addSql("(" + tag.getLength() + ")");
+                }
             }
             sql.addSql(")");
         }
         // 添加TTL支持
         String ttl = table.getAlias();
         if (!StringUtils.isNullOrEmpty(ttl)) {
-            sql.addSql("TTL " + ttl);
+            sql.addSql("KEEP " + ttl);
         }
         return sql.toRequest();
     }

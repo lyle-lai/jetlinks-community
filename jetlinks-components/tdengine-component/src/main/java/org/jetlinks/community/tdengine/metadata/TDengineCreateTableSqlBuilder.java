@@ -38,7 +38,7 @@ public class TDengineCreateTableSqlBuilder implements CreateTableSqlBuilder {
             sql
                 .addSql(",`" + column.getName() + "`")
                 .addSql(column.getType().getName());
-            if (column.getType().getSqlType() == java.sql.JDBCType.NCHAR && column.getLength() > 0) {
+            if ((column.getType().getSqlType() == java.sql.JDBCType.NCHAR || column.getType().getSqlType() == java.sql.JDBCType.VARCHAR) && column.getLength() > 0) {
                 sql.addSql("(" + column.getLength() + ")");
             }
 
@@ -52,9 +52,9 @@ public class TDengineCreateTableSqlBuilder implements CreateTableSqlBuilder {
                     sql.addSql(",");
                 }
                 sql
-                    .addSql(tag.getName())
+                    .addSql("`" + tag.getName() + "`")
                     .addSql(tag.getType().getName());
-                if (tag.getType().getSqlType() == java.sql.JDBCType.NCHAR && tag.getLength() > 0) {
+                if ((tag.getType().getSqlType() == java.sql.JDBCType.NCHAR || tag.getType().getSqlType() == java.sql.JDBCType.VARCHAR) && tag.getLength() > 0) {
                     sql.addSql("(" + tag.getLength() + ")");
                 }
             }

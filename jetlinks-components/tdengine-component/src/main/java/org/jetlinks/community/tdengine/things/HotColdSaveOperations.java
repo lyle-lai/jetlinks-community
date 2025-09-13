@@ -1,5 +1,6 @@
 package org.jetlinks.community.tdengine.things;
 
+
 import org.jetlinks.core.things.ThingsRegistry;
 import org.jetlinks.community.things.data.operations.DataSettings;
 import org.jetlinks.community.things.data.operations.MetricBuilder;
@@ -20,51 +21,41 @@ class HotColdSaveOperations extends TDengineColumnModeSaveOperations {
 
     @Override
     protected Mono<Void> doSave(String metric, TimeSeriesData data) {
-        // 格式: properties_thingType_templateId
-        String[] parts = metric.split("_");
-        if (parts.length < 3) {
-            // 直接调用父类doSave,保持和以前一样的动作
-            return super.doSave(metric, data);
+        String thingId = data.getString(metricBuilder.getThingIdProperty(), null);
+        if (thingId == null) {
+            return super.doSave(metric, data); //无法获取物ID
         }
-        String thingType = parts[1];
-        String templateId = parts[2];
+        //缓存物模型,避免重复获取
+        Mono<org.jetlinks.core.things.Thing> thingMono = registry
+            .getThing("device", thingId)
+            .cache();
 
-        return registry
-            .getTemplate(thingType,templateId)
-            .flatMap(org.jetlinks.core.things.ThingTemplate::getMetadata)
-            .flatMap(metadata -> {
-                Map<String, Object> allValues = data.getData();
-                long timestamp = data.getTimestamp();
+        return thingMono
+            .hasElement()
+            .flatMap(has -> {
+                //物模型存在,则走高低频率分离
+                if (has) {
+                    return thingMono
+                        .flatMap(org.jetlinks.core.things.Thing::getTemplate)
+                        .flatMap(template -> template.getMetadata())
+                        .flatMap(metadata -> {
+                            //只要有一个高频属性,则全部存入高频表.
+                            boolean isHot = data.getData()
+                                .keySet()
+                                .stream()
+                                .anyMatch(propertyId -> metadata
+                                    .getProperty(propertyId)
+                                    .map(propMeta -> "high".equals(propMeta.getExpands().get("frequency")))
+                                    .orElse(false));
 
-                Map<String, Object> hotValues = new HashMap<>();
-                Map<String, Object> coldValues = new HashMap<>();
-
-                for (Map.Entry<String, Object> entry : allValues.entrySet()) {
-                    String propertyId = entry.getKey();
-                    metadata.getProperty(propertyId).ifPresent(propMeta -> {
-                        Object frequency = propMeta.getExpands().get("frequency");
-                        if ("high".equals(frequency)) {
-                            hotValues.put(propertyId, entry.getValue());
-                        } else {
-                            coldValues.put(propertyId, entry.getValue());
-                        }
-                    });
+                            if (isHot) {
+                                return super.doSave(metric + "_hot", data);
+                            }
+                            return super.doSave(metric, data);
+                        });
                 }
-
-                Mono<Void> hot = Mono.empty();
-                if (!hotValues.isEmpty()) {
-                    String hotMetric = metric + "_hot";
-                    TimeSeriesData hotData = TimeSeriesData.of(timestamp, hotValues);
-                    hot = super.doSave(hotMetric, hotData);
-                }
-
-                Mono<Void> cold = Mono.empty();
-                if (!coldValues.isEmpty()) {
-                    TimeSeriesData coldData = TimeSeriesData.of(timestamp, coldValues);
-                    cold = super.doSave(metric, coldData);
-                }
-                return Mono.zip(hot, cold).then();
-            })
-            .switchIfEmpty(super.doSave(metric, data)); // 如果找不到物模型,则调用默认的保存逻辑
+                //物模型不存在,则调用默认的保存逻辑
+                return super.doSave(metric, data);
+            });
     }
 }

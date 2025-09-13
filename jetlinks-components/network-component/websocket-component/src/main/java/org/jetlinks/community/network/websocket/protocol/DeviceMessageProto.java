@@ -61,10 +61,6 @@ public final class DeviceMessageProto {
         int index);
 
     /**
-     * <pre>
-     * 优化: 使用int64替代string存储时间戳
-     * </pre>
-     *
      * <code>int64 time = 4;</code>
      * @return The time.
      */
@@ -266,10 +262,6 @@ public final class DeviceMessageProto {
     public static final int TIME_FIELD_NUMBER = 4;
     private long time_;
     /**
-     * <pre>
-     * 优化: 使用int64替代string存储时间戳
-     * </pre>
-     *
      * <code>int64 time = 4;</code>
      * @return The time.
      */
@@ -1023,10 +1015,6 @@ public final class DeviceMessageProto {
 
       private long time_ ;
       /**
-       * <pre>
-       * 优化: 使用int64替代string存储时间戳
-       * </pre>
-       *
        * <code>int64 time = 4;</code>
        * @return The time.
        */
@@ -1034,10 +1022,6 @@ public final class DeviceMessageProto {
         return time_;
       }
       /**
-       * <pre>
-       * 优化: 使用int64替代string存储时间戳
-       * </pre>
-       *
        * <code>int64 time = 4;</code>
        * @param value The time to set.
        * @return This builder for chaining.
@@ -1049,10 +1033,6 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <pre>
-       * 优化: 使用int64替代string存储时间戳
-       * </pre>
-       *
        * <code>int64 time = 4;</code>
        * @return This builder for chaining.
        */
@@ -1171,10 +1151,6 @@ public final class DeviceMessageProto {
         getAlarmValueBytes();
 
     /**
-     * <pre>
-     * 优化: 使用int64替代string存储时间戳
-     * </pre>
-     *
      * <code>int64 take_time = 5;</code>
      * @return The takeTime.
      */
@@ -1445,10 +1421,6 @@ public final class DeviceMessageProto {
     public static final int TAKE_TIME_FIELD_NUMBER = 5;
     private long takeTime_;
     /**
-     * <pre>
-     * 优化: 使用int64替代string存储时间戳
-     * </pre>
-     *
      * <code>int64 take_time = 5;</code>
      * @return The takeTime.
      */
@@ -2220,10 +2192,6 @@ public final class DeviceMessageProto {
 
       private long takeTime_ ;
       /**
-       * <pre>
-       * 优化: 使用int64替代string存储时间戳
-       * </pre>
-       *
        * <code>int64 take_time = 5;</code>
        * @return The takeTime.
        */
@@ -2231,10 +2199,6 @@ public final class DeviceMessageProto {
         return takeTime_;
       }
       /**
-       * <pre>
-       * 优化: 使用int64替代string存储时间戳
-       * </pre>
-       *
        * <code>int64 take_time = 5;</code>
        * @param value The takeTime to set.
        * @return This builder for chaining.
@@ -2246,10 +2210,6 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <pre>
-       * 优化: 使用int64替代string存储时间戳
-       * </pre>
-       *
        * <code>int64 take_time = 5;</code>
        * @return This builder for chaining.
        */
@@ -2374,20 +2334,12 @@ public final class DeviceMessageProto {
     org.jetlinks.community.network.websocket.protocol.DeviceMessageProto.WaveformOrBuilder getWaveformValueOrBuilder();
 
     /**
-     * <pre>
-     * 新增: 支持double类型
-     * </pre>
-     *
      * <code>double double_value = 3;</code>
      * @return The doubleValue.
      */
     double getDoubleValue();
 
     /**
-     * <pre>
-     * 新增: 支持bool类型
-     * </pre>
-     *
      * <code>bool bool_value = 4;</code>
      * @return The boolValue.
      */
@@ -2626,10 +2578,6 @@ public final class DeviceMessageProto {
 
     public static final int DOUBLE_VALUE_FIELD_NUMBER = 3;
     /**
-     * <pre>
-     * 新增: 支持double类型
-     * </pre>
-     *
      * <code>double double_value = 3;</code>
      * @return The doubleValue.
      */
@@ -2642,10 +2590,6 @@ public final class DeviceMessageProto {
 
     public static final int BOOL_VALUE_FIELD_NUMBER = 4;
     /**
-     * <pre>
-     * 新增: 支持bool类型
-     * </pre>
-     *
      * <code>bool bool_value = 4;</code>
      * @return The boolValue.
      */
@@ -3303,10 +3247,6 @@ public final class DeviceMessageProto {
       }
 
       /**
-       * <pre>
-       * 新增: 支持double类型
-       * </pre>
-       *
        * <code>double double_value = 3;</code>
        * @return The doubleValue.
        */
@@ -3317,10 +3257,6 @@ public final class DeviceMessageProto {
         return 0D;
       }
       /**
-       * <pre>
-       * 新增: 支持double类型
-       * </pre>
-       *
        * <code>double double_value = 3;</code>
        * @param value The doubleValue to set.
        * @return This builder for chaining.
@@ -3332,10 +3268,6 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <pre>
-       * 新增: 支持double类型
-       * </pre>
-       *
        * <code>double double_value = 3;</code>
        * @return This builder for chaining.
        */
@@ -3349,10 +3281,6 @@ public final class DeviceMessageProto {
       }
 
       /**
-       * <pre>
-       * 新增: 支持bool类型
-       * </pre>
-       *
        * <code>bool bool_value = 4;</code>
        * @return The boolValue.
        */
@@ -3363,10 +3291,6 @@ public final class DeviceMessageProto {
         return false;
       }
       /**
-       * <pre>
-       * 新增: 支持bool类型
-       * </pre>
-       *
        * <code>bool bool_value = 4;</code>
        * @param value The boolValue to set.
        * @return This builder for chaining.
@@ -3378,10 +3302,6 @@ public final class DeviceMessageProto {
         return this;
       }
       /**
-       * <pre>
-       * 新增: 支持bool类型
-       * </pre>
-       *
        * <code>bool bool_value = 4;</code>
        * @return This builder for chaining.
        */

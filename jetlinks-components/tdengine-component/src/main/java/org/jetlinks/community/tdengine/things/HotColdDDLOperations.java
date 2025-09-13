@@ -4,6 +4,7 @@ import org.hswebframework.ezorm.rdb.executor.wrapper.ResultWrappers;
 import org.hswebframework.ezorm.rdb.metadata.RDBColumnMetadata;
 import org.hswebframework.ezorm.rdb.metadata.RDBTableMetadata;
 import org.hswebframework.ezorm.rdb.operator.builder.fragments.ddl.CreateTableSqlBuilder;
+import org.jetlinks.community.ConfigMetadataConstants;
 import org.jetlinks.community.tdengine.TDengineConstants;
 import org.jetlinks.community.things.data.ThingsDataConstants;
 import org.jetlinks.core.metadata.PropertyMetadata;
@@ -15,10 +16,7 @@ import org.jetlinks.community.things.data.operations.MetricBuilder;
 import reactor.core.publisher.Mono;
 
 import java.sql.JDBCType;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 class HotColdDDLOperations extends TDengineColumnModeDDLOperations {
 
@@ -34,6 +32,15 @@ class HotColdDDLOperations extends TDengineColumnModeDDLOperations {
     }
 
     @Override
+    protected List<PropertyMetadata> createBasicColumns() {
+        return Arrays
+            .asList(
+                SimplePropertyMetadata.of(metricBuilder.getThingIdProperty(), "物ID", StringType.GLOBAL),
+                SimplePropertyMetadata.of(ThingsDataConstants.COLUMN_CREATE_TIME, "创建时间", DateTimeType.GLOBAL)
+            );
+    }
+
+    @Override
     protected Mono<Void> register(MetricType metricType, String metric, List<PropertyMetadata> properties) {
         if (metricType == MetricType.properties) {
             List<PropertyMetadata> hotProperties = new ArrayList<>();
@@ -42,6 +49,7 @@ class HotColdDDLOperations extends TDengineColumnModeDDLOperations {
                 if (property instanceof SimplePropertyMetadata){
                     hotProperties.add(property);
                     coldProperties.add(property);
+                    continue;
                 }
 
                 if (property.getExpands() != null && "high".equals(property.getExpands().getOrDefault("frequency","low"))) {
@@ -81,21 +89,11 @@ class HotColdDDLOperations extends TDengineColumnModeDDLOperations {
             if (rdbType != null) {
                 column.setType(rdbType);
                 // array, object , string , geo 都转为nchar
-                if (rdbType.getSqlType() == JDBCType.ARRAY || rdbType.getSqlType() == JDBCType.NCHAR) {
-                    // 从jetlinks的物模型定义中获取字符长度
-
-                    int len = rdbType.getSqlType() == JDBCType.ARRAY ? 2048 : 255;
-                    Object maxLength = property.getExpands() == null ? len :property.getExpands().getOrDefault("maxLength",len);
-                    if (maxLength instanceof Number) {
-                        len = ((Number) maxLength).intValue();
-                    } else if (maxLength != null) {
-                        try {
-                            len = Integer.parseInt(String.valueOf(maxLength));
-                        } catch (NumberFormatException ignore) {
-                        }
-                    }
-                    column.setLength(len);
-                    column.setType(org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.NCHAR, String.class));
+                if (rdbType.getSqlType() == JDBCType.NCHAR) {
+                    column.setLength(255);
+                }
+                if (rdbType.getSqlType() == JDBCType.VARCHAR){
+                    column.setLength(4096);
                 }
             }
 
@@ -127,16 +125,15 @@ class HotColdDDLOperations extends TDengineColumnModeDDLOperations {
                 return org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.INTEGER, Integer.class);
             case LongType.ID:
                 return org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.BIGINT, Long.class);
+            case DateTimeType.ID:
             case DoubleType.ID:
                 return org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.DOUBLE, Double.class);
             case FloatType.ID:
                 return org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.FLOAT, Float.class);
             case BooleanType.ID:
                 return org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.BOOLEAN, Boolean.class);
-            case DateTimeType.ID:
-                return org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.TIMESTAMP, Date.class);
             case ArrayType.ID:
-                return org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.ARRAY, String.class);
+                return org.hswebframework.ezorm.rdb.metadata.DataType.jdbc(JDBCType.VARCHAR, String.class);
             case ObjectType.ID:
             case StringType.ID:
             default:
